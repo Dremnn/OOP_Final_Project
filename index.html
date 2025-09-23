@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highlands Coffee</title>
+    <!-- Các thẻ meta cho PWA -->
+    <meta name="theme-color" content="#B22830"/>
+    <link rel="apple-touch-icon" href="/images/logo-192.png">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Liên kết CSS và Fonts -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Màn hình Loading ban đầu -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Trang Đăng Nhập -->
+    <div id="login-page" class="page">
+        <div class="login-container">
+            <div class="login-header">
+                <!-- Placeholder cho logo Highlands -->
+                <img src="https://www.highlandscoffee.com.vn/vnt_upload/weblink/White_logo800.png" alt="Highlands Logo" class="login-logo" style="background: #B22830; padding: 10px;">
+                <h1>Highlands Coffee</h1>
+                <p>Xin chào, vui lòng đăng nhập</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <i class="fas fa-user"></i>
+                    <!-- Hướng dẫn đăng nhập với vai trò khác nhau -->
+                    <input type="text" id="username" placeholder="Tên đăng nhập (user / admin)" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Mật khẩu (ví dụ: 123)" required>
+                </div>
+                <p id="login-error" class="error-message"></p>
+                <button type="submit" class="btn btn-primary">Đăng Nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Container chính của ứng dụng, chỉ hiển thị sau khi đăng nhập -->
+    <div id="app-container" class="app-container">
+        <!-- Trang Chủ / Thực Đơn -->
+        <main id="home-page" class="page">
+            <header class="page-header">
+                <div class="header-title">
+                    <p class="greeting">Xin chào, <span id="header-username"></span>!</p>
+                    <h2>Thực Đơn</h2>
+                </div>
+                <!-- Nút giỏ hàng chỉ hiển thị cho Customer -->
+                <button id="cart-button" class="icon-button">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-count" class="cart-count">0</span>
+                </button>
+            </header>
+            <div id="product-list" class="product-grid">
+                <!-- Danh sách sản phẩm sẽ được JS render vào đây -->
+            </div>
+        </main>
+
+        <!-- Trang Lịch Sử Đơn Hàng -->
+        <section id="orders-page" class="page">
+            <header class="page-header"><h2>Lịch Sử Đơn Hàng</h2></header>
+            <div id="order-list" class="order-list">
+                <!-- Lịch sử đơn hàng sẽ được JS render vào đây -->
+            </div>
+        </section>
+
+        <!-- Trang Đặt Hẹn -->
+        <section id="appointment-page" class="page">
+            <header class="page-header"><h2>Đặt Hẹn Trải Nghiệm</h2></header>
+            <div class="appointment-container">
+                <i class="fas fa-calendar-check appointment-icon"></i>
+                <h3>Tính năng sắp ra mắt</h3>
+                <p>Chúng tôi đang phát triển tính năng đặt hẹn trải nghiệm cà phê. Vui lòng quay lại sau!</p>
+            </div>
+        </section>
+
+        <!-- Trang Cá Nhân / Loyalty -->
+        <section id="profile-page" class="page">
+            <header class="page-header"><h2>Tài Khoản</h2></header>
+            <div class="profile-card">
+                <i class="fas fa-user-circle profile-avatar"></i>
+                <h3 id="profile-username"></h3>
+                <!-- Phần điểm thưởng chỉ hiển thị cho Customer -->
+                <div id="loyalty-section" class="loyalty-card">
+                    <h4><i class="fas fa-star"></i> Điểm Thưởng Của Bạn</h4>
+                    <p class="loyalty-points"><span id="loyalty-points">0</span> điểm</p>
+                </div>
+                <button id="logout-button" class="btn btn-secondary">Đăng Xuất</button>
+            </div>
+        </section>
+
+        <!-- Thanh Điều Hướng Dưới Cùng -->
+        <nav class="bottom-nav">
+            <a href="#home" class="nav-item active" data-page="home-page"><i class="fas fa-mug-hot"></i><span>Thực Đơn</span></a>
+            <a href="#orders" class="nav-item" data-page="orders-page"><i class="fas fa-receipt"></i><span>Đơn Hàng</span></a>
+            <a href="#appointment" class="nav-item" data-page="appointment-page"><i class="fas fa-calendar-alt"></i><span>Đặt Hẹn</span></a>
+            <a href="#profile" class="nav-item" data-page="profile-page"><i class="fas fa-user"></i><span>Cá Nhân</span></a>
+        </nav>
+    </div>
+
+    <!-- Modal Giỏ Hàng -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Giỏ Hàng Của Bạn</h2>
+                <button id="close-modal-button" class="close-button">&times;</button>
+            </div>
+            <div id="modal-cart-items" class="modal-body">
+                <!-- Các sản phẩm trong giỏ hàng sẽ được JS render vào đây -->
+            </div>
+            <div class="modal-footer">
+                <div class="total-price">
+                    <strong>Tổng cộng:</strong>
+                    <span id="modal-total-price">0đ</span>
+                </div>
+                <button id="checkout-button" class="btn btn-primary">Đặt Hàng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nạp file JS chính dạng module để nó tự động xử lý các import -->
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>
+

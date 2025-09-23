@@ -1,0 +1,118 @@
+/* --- Cài đặt chung và biến màu Highlands --- */
+:root {
+    --primary-color: #B22830; /* Highlands Red */
+    --secondary-color: #4A2C2A; /* Dark Brown */
+    --background-color: #F8F4F0; /* Light Beige */
+    --surface-color: #FFFFFF;
+    --text-color: #333333;
+    --text-light: #757575;
+    --font-family: 'Roboto', sans-serif;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+}
+
+/* --- Reset và Cài đặt toàn cục --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+    height: 100%;
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    -webkit-tap-highlight-color: transparent; /* Tắt highlight khi chạm trên mobile */
+    overflow-x: hidden;
+}
+
+/* --- Các thành phần chung (Buttons, Pages, Headers) --- */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+.btn-primary { background-color: var(--primary-color); color: white; }
+.btn-primary:hover { background-color: #912027; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(178, 40, 48, 0.3); }
+.btn-secondary { background-color: #e0e0e0; color: var(--text-color); }
+.btn-secondary:hover { background-color: #c7c7c7; }
+.icon-button {
+    background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-color); position: relative;
+}
+.page { display: none; flex-direction: column; padding: 1rem 1rem 80px 1rem; animation: fadeIn 0.4s ease; }
+.page.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+}
+.page-header h2 { font-size: 1.8rem; color: var(--secondary-color); font-weight: 700; }
+.greeting { font-size: 0.9rem; color: var(--text-light); }
+
+/* --- Màn hình Loading --- */
+.loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--background-color); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+.spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* --- Trang Đăng Nhập --- */
+.login-container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; padding: 2rem; }
+.login-header { text-align: center; margin-bottom: 2rem; }
+.login-logo { width: 100px; margin-bottom: 1rem; }
+.login-header h1 { font-size: 2.2rem; color: var(--primary-color); }
+.login-header p { color: var(--text-light); }
+.login-form { width: 100%; max-width: 350px; }
+.form-group { position: relative; margin-bottom: 1.5rem; }
+.form-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+.form-group input { width: 100%; padding: 15px 15px 15px 45px; border: 1px solid #ddd; border-radius: var(--border-radius); font-size: 1rem; }
+.error-message { color: var(--primary-color); text-align: center; margin-bottom: 1rem; min-height: 1.2em; }
+
+/* --- Trang Chủ & Sản Phẩm --- */
+.app-container { display: none; }
+.product-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 600px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+.product-card { background: var(--surface-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow); display: flex; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); }
+.product-image { width: 120px; height: 120px; object-fit: cover; flex-shrink: 0; }
+.product-info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; }
+.product-info h3 { font-size: 1.1rem; margin-bottom: 0.25rem; font-weight: 700; color: var(--secondary-color); }
+.product-desc { color: var(--text-light); flex-grow: 1; margin-bottom: 0.5rem; font-size: 0.9rem; }
+.product-footer { display: flex; justify-content: space-between; align-items: center; }
+.product-price { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); }
+.btn-add-to-cart { background: none; border: 2px solid var(--primary-color); color: var(--primary-color); font-size: 1.5rem; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease; }
+.btn-add-to-cart:hover { background: var(--primary-color); color: white; transform: scale(1.1); }
+.cart-count { position: absolute; top: -5px; right: -10px; background-color: var(--primary-color); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; border: 2px solid var(--surface-color); }
+
+/* --- Trang Đơn Hàng & Cá Nhân & Đặt Hẹn --- */
+.order-list { display: flex; flex-direction: column; gap: 1rem; }
+.order-card, .profile-card, .appointment-container { background-color: var(--surface-color); border-radius: var(--border-radius); padding: 1.5rem; box-shadow: var(--box-shadow); }
+.order-card-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 500; }
+.order-id { color: var(--primary-color); font-weight: 700; }
+.order-total { color: var(--text-color); }
+.profile-card, .appointment-container { text-align: center; }
+.profile-avatar, .appointment-icon { font-size: 5rem; color: #ccc; margin-bottom: 1rem; }
+.profile-card h3 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.loyalty-card { background: linear-gradient(135deg, var(--secondary-color), #6a4a48); color: white; padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; }
+.loyalty-points { font-size: 2.5rem; font-weight: 700; }
+.appointment-container h3 { color: var(--secondary-color); margin-bottom: 0.5rem; }
+
+/* --- Thanh Điều Hướng Dưới Cùng --- */
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background-color: var(--surface-color); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+.nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-light); transition: all 0.2s ease; padding: 0.5rem; }
+.nav-item i { font-size: 1.5rem; }
+.nav-item span { font-size: 0.7rem; margin-top: 4px; }
+.nav-item.active { color: var(--primary-color); transform: translateY(-3px); }
+
+/* --- Modal Giỏ Hàng --- */
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+.modal.active { display: flex; }
+.modal-content { background-color: #fefefe; margin: auto; width: 90%; max-width: 500px; border-radius: var(--border-radius); overflow: hidden; display: flex; flex-direction: column; animation: slideIn 0.3s ease; }
+@keyframes slideIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #ddd; }
+.close-button { background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--text-light); }
+.modal-body { padding: 1.5rem; overflow-y: auto; max-height: 50vh; }
+.modal-cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.modal-footer { padding: 1.5rem; border-top: 1px solid #ddd; background-color: #fafafa; }
+.total-price { display: flex; justify-content: space-between; font-size: 1.2rem; margin-bottom: 1rem; }
+
