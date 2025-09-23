@@ -23,6 +23,14 @@ export default class UIManager {
             profileUsername: document.getElementById('profile-username'),
             loyaltySection: document.getElementById('loyalty-section'),
             loyaltyPoints: document.getElementById('loyalty-points'),
+            // elements for admin
+            adminControls: document.getElementById('admin-controls'),
+            productModal: document.getElementById('product-modal'),
+            productModalTitle: document.getElementById('product-modal-title'),
+            productForm: document.getElementById('product-form'),
+            productType: document.getElementById('product-type'),
+            drinkFields: document.getElementById('drink-fields'),
+            foodFields: document.getElementById('food-fields'),
         };
     }
 
@@ -68,20 +76,33 @@ export default class UIManager {
         products.forEach(product => {
             const card = document.createElement('div');
             card.className = 'product-card';
-            // Chỉ hiển thị nút "Thêm vào giỏ" nếu người dùng là customer
+            card.style.position = 'relative';
+
+            let actions = '';
+            if (currentUser.role === 'admin') {
+                actions = `
+                    <div class="product-card-admin-actions">
+                        <button class="admin-action-btn btn-edit" data-product-id="${product.id}"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="admin-action-btn btn-delete" data-product-id="${product.id}"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+            }
+
             const addButton = currentUser.role === 'customer' 
-                ? `<button class="btn-add-to-cart" data-product-id="${product.id}">
-                       <i class="fas fa-plus"></i>
-                   </button>`
+                ? `<button class="btn-add-to-cart" data-product-id="${product.id}"><i class="fas fa-plus"></i></button>`
                 : '';
-            
+
+            // Kiểm tra thuộc tính isVegetarian một cách an toàn
+            const isVegeText = product.type === 'food' && product.isVegetarian ? ' (Chay)' : '';
+
             card.innerHTML = `
+                ${actions}
                 <img src="${product.imageUrl}" alt="${product.name}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/120x120/ccc/fff?text=IMG';">
                 <div class="product-info">
-                    <h3>${product.name}</h3>
-                    <p class="product-desc">${product.description}</p>
+                    <h3>${product.name}${isVegeText}</h3>
+                    <p class="product-desc">${product.description || ''}</p>
                     <div class="product-footer">
-                        <span class="product-price">${product.price.toLocaleString('vi-VN')}đ</span>
+                        <span class="product-price">${(product.price || 0).toLocaleString('vi-VN')}đ</span>
                         ${addButton}
                     </div>
                 </div>
@@ -159,11 +180,59 @@ export default class UIManager {
             this.elements.cartButton.style.display = 'block';
             this.elements.loyaltySection.style.display = 'block';
             this.elements.loyaltyPoints.textContent = user.loyaltyPoints.toLocaleString('vi-VN');
+            this.elements.adminControls.style.display = 'none';
         } else if (user.role === 'admin') {
             // Ẩn các chức năng của customer cho admin
             this.elements.cartButton.style.display = 'none';
             this.elements.loyaltySection.style.display = 'none';
+            this.elements.adminControls.style.display = 'block';
         }
     }
+
+     /**
+     * Hiển thị modal để Thêm hoặc Sửa sản phẩm.
+     * @param {Drink | Food | null} product - Dữ liệu sản phẩm để sửa, hoặc null để thêm mới.
+     */
+    showProductModal(product = null) {
+        this.elements.productForm.reset();
+        if (product) {
+            // Chế độ Sửa
+            this.elements.productModalTitle.textContent = 'Chỉnh Sửa Sản Phẩm';
+            this.elements.productForm.elements['product-id'].value = product.id;
+            this.elements.productForm.elements['product-type'].value = product.type;
+            this.elements.productForm.elements['product-name'].value = product.name;
+            this.elements.productForm.elements['product-price'].value = product.price;
+            this.elements.productForm.elements['product-image'].value = product.imageUrl;
+            this.elements.productForm.elements['product-desc'].value = product.description;
+
+            if(product.type === 'drink') {
+                this.elements.productForm.elements['product-size'].value = product.size;
+            } else if (product.type === 'food') {
+                this.elements.productForm.elements['product-vegetarian'].checked = product.isVegetarian;
+            }
+        } else {
+            // Chế độ Thêm
+            this.elements.productModalTitle.textContent = 'Thêm Sản Phẩm Mới';
+        }
+        this.toggleProductTypeFields(); // Hiển thị đúng trường theo type
+        this.elements.productModal.classList.add('active');
+    }
+
+    hideProductModal() {
+        this.elements.productModal.classList.remove('active');
+    }
+    
+    /**
+     * Ẩn/hiện các trường dữ liệu riêng của Drink/Food trong form.
+     */
+    toggleProductTypeFields() {
+        const selectedType = this.elements.productType.value;
+        this.elements.drinkFields.style.display = selectedType === 'drink' ? 'block' : 'none';
+        this.elements.foodFields.style.display = selectedType === 'food' ? 'block' : 'none';
+    }
 }
+
+
+
+
 

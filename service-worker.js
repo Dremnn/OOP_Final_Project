@@ -1,5 +1,4 @@
-const CACHE_NAME = 'highlands-pwa-v3'; // Nâng cấp phiên bản cache
-// Danh sách đầy đủ các file cần thiết để ứng dụng chạy offline
+const CACHE_NAME = 'highlands-pwa-v4'; // Nâng cấp phiên bản cache
 const urlsToCache = [
   '/',
   '/index.html',
@@ -11,6 +10,8 @@ const urlsToCache = [
   '/js/classes/Admin.js',
   '/js/classes/Product.js',
   '/js/classes/Order.js',
+  '/js/classes/Drink.js',   
+  '/js/classes/Food.js',    
   // Tất cả các manager
   '/js/managers/UIManager.js',
   '/js/managers/ProductManager.js',
@@ -27,41 +28,20 @@ const urlsToCache = [
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap'
 ];
 
-// Sự kiện 'install': được gọi khi service worker được cài đặt lần đầu
+// Các event 'install', 'activate', 'fetch' giữ nguyên không đổi
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
 });
 
-// Sự kiện 'activate': được gọi khi service worker được kích hoạt
-// Thường dùng để dọn dẹp các cache cũ
 self.addEventListener('activate', event => {
     event.waitUntil(caches.keys().then(cacheNames => {
-        return Promise.all(
-            cacheNames.filter(name => name !== CACHE_NAME)
-                      .map(name => caches.delete(name))
-        );
+        return Promise.all(cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name)));
     }));
 });
 
-// Sự kiện 'fetch': được gọi mỗi khi có một yêu cầu mạng từ ứng dụng
-// Đây là nơi chúng ta triển khai chiến lược cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Nếu tìm thấy request trong cache, trả về response từ cache
-        if (response) {
-          return response;
-        }
-        // Nếu không, thực hiện yêu cầu mạng thực sự
-        return fetch(event.request);
-      })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
 

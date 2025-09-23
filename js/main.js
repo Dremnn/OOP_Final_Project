@@ -84,6 +84,10 @@ class App {
             this.uiManager.showPage('login-page');
         });
 
+        document.getElementById('add-product-btn')?.addEventListener('click', () => {
+            this.uiManager.showProductModal(null);
+        });        
+
         // Xử lý điều hướng bằng nav bar
         this.uiManager.elements.navItems.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -133,6 +137,64 @@ class App {
                 this.uiManager.updateActiveNav('orders-page');
             }
         });
+
+        // SỰ KIỆN ADMIN: Xử lý Sửa và Xóa sản phẩm
+        this.uiManager.elements.productList.addEventListener('click', async e => {
+            const editBtn = e.target.closest('.btn-edit');
+            const deleteBtn = e.target.closest('.btn-delete');
+            const addBtn = e.target.closest('.btn-add-to-cart');
+
+            if (editBtn) {
+                const productId = editBtn.dataset.productId;
+                const product = this.productManager.getProductById(productId);
+                this.uiManager.showProductModal(product);
+            } else if (deleteBtn) {
+                const productId = deleteBtn.dataset.productId;
+                if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                    await this.productManager.deleteProduct(productId);
+                    // Render lại danh sách sản phẩm
+                    this.uiManager.renderProducts(this.productManager.products, this.userManager.currentUser);
+                }
+            } else if (addBtn) {
+                // Logic thêm vào giỏ hàng của customer (đã có từ trước)
+            }
+        });
+
+        // SỰ KIỆN ADMIN: Xử lý submit form Thêm/Sửa sản phẩm
+        this.uiManager.elements.productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Lấy dữ liệu từ form và chuyển đổi
+            const productData = {
+                id: e.target.elements['product-id'].value,
+                type: e.target.elements['product-type'].value,
+                name: e.target.elements['product-name'].value,
+                price: parseInt(e.target.elements['product-price'].value, 10),
+                imageUrl: e.target.elements['product-image'].value,
+                description: e.target.elements['product-desc'].value,
+                size: e.target.elements['product-size'].value,
+                isVegetarian: e.target.elements['product-vegetarian'].checked,
+            };
+
+            if (productData.id) { // Nếu có ID -> Sửa
+                await this.productManager.updateProduct(productData);
+            } else { // Nếu không có ID -> Thêm mới
+                await this.productManager.addProduct(productData);
+            }
+
+            this.uiManager.hideProductModal();
+            // Tải lại toàn bộ sản phẩm từ DB để đảm bảo đồng bộ và render lại
+            await this.productManager.loadProducts();
+            this.uiManager.renderProducts(this.productManager.products, this.userManager.currentUser);
+        });
+
+        // Đóng modal admin
+        document.getElementById('close-product-modal-btn')?.addEventListener('click', () => this.uiManager.hideProductModal());
+        // Thay đổi trường hiển thị khi chọn type
+        this.uiManager.elements.productType.addEventListener('change', () => this.uiManager.toggleProductTypeFields());
+        
     }
 
     /**

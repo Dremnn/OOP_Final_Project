@@ -77,5 +77,20 @@ export class DBService {
             request.onerror = (event) => reject(event.target.error);
         });
     }
-}
+
+    /**
+     * Xóa một record khỏi object store bằng key.
+     * @param {string} storeName - Tên object store.
+     * @param {string} key - Key của record cần xóa.
+     */
+    static async deleteData(storeName, key) {
+        return new Promise((resolve, reject) => {
+            const request = this.#getStore(storeName, 'readwrite').delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+}    
+
+
 
