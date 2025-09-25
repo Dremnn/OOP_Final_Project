@@ -1,238 +1,229 @@
-/**
- * UIManager: Chịu trách nhiệm cho tất cả các thao tác cập nhật trên DOM.
- * Giúp tách biệt logic hiển thị ra khỏi logic nghiệp vụ.
- */
-export default class UIManager {
+class UIManager {
     constructor() {
-        // Lấy tất cả các DOM element cần thiết một lần duy nhất
-        this.elements = {
-            loadingOverlay: document.getElementById('loading-overlay'),
-            loginPage: document.getElementById('login-page'),
-            appContainer: document.getElementById('app-container'),
-            pages: document.querySelectorAll('.page'),
-            navItems: document.querySelectorAll('.nav-item'),
-            productList: document.getElementById('product-list'),
-            orderList: document.getElementById('order-list'),
-            cartButton: document.getElementById('cart-button'),
-            cartCount: document.getElementById('cart-count'),
-            cartModal: document.getElementById('cart-modal'),
-            modalCartItems: document.getElementById('modal-cart-items'),
-            modalTotalPrice: document.getElementById('modal-total-price'),
-            checkoutButton: document.getElementById('checkout-button'),
-            headerUsername: document.getElementById('header-username'),
-            profileUsername: document.getElementById('profile-username'),
-            loyaltySection: document.getElementById('loyalty-section'),
-            loyaltyPoints: document.getElementById('loyalty-points'),
-            // elements for admin
-            adminControls: document.getElementById('admin-controls'),
-            productModal: document.getElementById('product-modal'),
-            productModalTitle: document.getElementById('product-modal-title'),
-            productForm: document.getElementById('product-form'),
-            productType: document.getElementById('product-type'),
-            drinkFields: document.getElementById('drink-fields'),
-            foodFields: document.getElementById('food-fields'),
-        };
+        // Auth elements
+        this.authSection = document.getElementById('authSection');
+        this.mainApp = document.getElementById('mainApp');
+        this.loginForm = document.getElementById('loginForm');
+        this.registerForm = document.getElementById('registerForm');
+        this.showRegisterLink = document.getElementById('showRegister');
+        this.showLoginLink = document.getElementById('showLogin');
+        this.authAlert = document.getElementById('authAlert');
+
+        // Main app elements
+        this.currentUserSpan = document.getElementById('currentUser');
+        this.productList = document.getElementById('productList');
+        this.cartItemsContainer = document.getElementById('cartItems');
+        this.cartTotalSpan = document.getElementById('cartTotal');
+        this.checkoutBtn = document.getElementById('checkoutBtn');
+        this.orderListContainer = document.getElementById('orderList');
+
+        // Product Modal elements
+        this.productModal = document.getElementById('productModal');
+        this.productModalTitle = document.getElementById('productModalTitle');
+        this.productForm = document.getElementById('productForm');
+        this.closeProductModalBtn = document.getElementById('closeProductModal');
     }
 
-    showLoading() { this.elements.loadingOverlay.style.display = 'flex'; }
-    hideLoading() {
-        this.elements.loadingOverlay.style.opacity = '0';
-        setTimeout(() => this.elements.loadingOverlay.style.display = 'none', 500);
+    // --- VIEW TOGGLING ---
+    showAuth() {
+        this.authSection.style.display = 'block';
+        this.mainApp.style.display = 'none';
+        this.showLogin(); // Default to login form
+        this.authAlert.innerHTML = `
+            <div class="alert alert-success">
+                <strong>Tài khoản Demo:</strong><br>
+                Admin: Tên đăng nhập "admin", Mật khẩu "admin123"<br>
+                Hoặc đăng ký tài khoản khách hàng mới.
+            </div>
+        `;
     }
 
-    /**
-     * Hiển thị một trang cụ thể và ẩn các trang khác.
-     * @param {string} pageId - ID của page div.
-     */
-    showPage(pageId) {
-        if (pageId === 'login-page') {
-            this.elements.loginPage.style.display = 'flex';
-            this.elements.appContainer.style.display = 'none';
-        } else {
-            this.elements.loginPage.style.display = 'none';
-            this.elements.appContainer.style.display = 'block';
-            this.elements.pages.forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId)?.classList.add('active');
-        }
+    showApp() {
+        this.authSection.style.display = 'none';
+        this.mainApp.style.display = 'block';
+    }
+
+    showLogin() {
+        this.loginForm.style.display = 'block';
+        this.registerForm.style.display = 'none';
     }
     
-    /**
-     * Cập nhật trạng thái active cho thanh điều hướng.
-     * @param {string} pageId - ID của trang đang active.
-     */
-    updateActiveNav(pageId) {
-        this.elements.navItems.forEach(item => {
-            item.classList.toggle('active', item.dataset.page === pageId);
+    showRegister() {
+        this.loginForm.style.display = 'none';
+        this.registerForm.style.display = 'block';
+    }
+
+    // --- RENDERING ---
+
+    renderUserInfo(user) {
+        this.currentUserSpan.textContent = `Xin chào, ${user.username}`;
+        // Show admin-only elements
+        const adminElements = document.querySelectorAll('.admin-only');
+        adminElements.forEach(el => {
+            el.style.display = user.isAdmin ? 'block' : 'none';
         });
     }
 
-    /**
-     * Render danh sách sản phẩm ra màn hình.
-     * @param {Array<Product>} products - Mảng các đối tượng Product.
-     * @param {User} currentUser - Người dùng hiện tại để quyết định có hiển thị nút add hay không.
-     */
-    renderProducts(products, currentUser) {
-        this.elements.productList.innerHTML = '';
+    renderProducts(products, isAdmin, onAddToCart, onEdit, onDelete) {
+        this.productList.innerHTML = '';
         products.forEach(product => {
             const card = document.createElement('div');
             card.className = 'product-card';
-            card.style.position = 'relative';
-
-            let actions = '';
-            if (currentUser.role === 'admin') {
-                actions = `
-                    <div class="product-card-admin-actions">
-                        <button class="admin-action-btn btn-edit" data-product-id="${product.id}"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="admin-action-btn btn-delete" data-product-id="${product.id}"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-            }
-
-            const addButton = currentUser.role === 'customer' 
-                ? `<button class="btn-add-to-cart" data-product-id="${product.id}"><i class="fas fa-plus"></i></button>`
-                : '';
-
-            // Kiểm tra thuộc tính isVegetarian một cách an toàn
-            const isVegeText = product.type === 'food' && product.isVegetarian ? ' (Chay)' : '';
-
             card.innerHTML = `
-                ${actions}
-                <img src="${product.imageUrl}" alt="${product.name}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/120x120/ccc/fff?text=IMG';">
+                <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='https://placehold.co/300x200/cccccc/ffffff?text=Image+Error'">
                 <div class="product-info">
-                    <h3>${product.name}${isVegeText}</h3>
-                    <p class="product-desc">${product.description || ''}</p>
-                    <div class="product-footer">
-                        <span class="product-price">${(product.price || 0).toLocaleString('vi-VN')}đ</span>
-                        ${addButton}
+                    <h3>${product.name}</h3>
+                    <p class="description">${product.description}</p>
+                    <div class="product-price">${this.formatPrice(product.price)}</div>
+                    <div class="product-actions">
+                        ${!isAdmin ? `<button class="btn btn-primary btn-sm add-to-cart-btn" data-id="${product.id}">Thêm vào giỏ</button>` : ''}
                     </div>
+                     ${isAdmin ? `
+                        <div class="admin-product-actions">
+                            <button class="btn btn-secondary btn-sm edit-product-btn" data-id="${product.id}">Sửa</button>
+                            <button class="btn btn-danger btn-sm delete-product-btn" data-id="${product.id}">Xóa</button>
+                        </div>` : ''}
                 </div>
             `;
-            this.elements.productList.appendChild(card);
+            this.productList.appendChild(card);
         });
+
+        // Add event listeners after rendering
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => btn.addEventListener('click', () => onAddToCart(btn.dataset.id)));
+        if (isAdmin) {
+             document.querySelectorAll('.edit-product-btn').forEach(btn => btn.addEventListener('click', () => onEdit(btn.dataset.id)));
+             document.querySelectorAll('.delete-product-btn').forEach(btn => btn.addEventListener('click', () => onDelete(btn.dataset.id)));
+        }
     }
-
-    /**
-     * Cập nhật hiển thị của giỏ hàng (số lượng và modal).
-     * @param {CartManager} cart - Đối tượng CartManager.
-     */
-    updateCart(cart) {
-        const totalItems = cart.getTotalItems();
-        this.elements.cartCount.textContent = totalItems;
-        this.elements.cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
-
-        this.elements.modalCartItems.innerHTML = '';
-        if (cart.items.length === 0) {
-            this.elements.modalCartItems.innerHTML = '<p>Giỏ hàng của bạn đang trống.</p>';
+    
+    renderCart(cart, cartTotal, onUpdateQuantity, onRemoveItem) {
+        this.cartItemsContainer.innerHTML = '';
+        if (cart.length === 0) {
+            this.cartItemsContainer.innerHTML = '<p>Giỏ hàng của bạn đang trống.</p>';
         } else {
-             cart.items.forEach(item => {
+             cart.forEach(item => {
                 const itemEl = document.createElement('div');
-                itemEl.className = 'modal-cart-item';
-                itemEl.innerHTML = `<span>${item.product.name} (x${item.quantity})</span> <span>${(item.product.price * item.quantity).toLocaleString('vi-VN')}đ</span>`;
-                this.elements.modalCartItems.appendChild(itemEl);
+                itemEl.className = 'cart-item';
+                itemEl.innerHTML = `
+                    <div class="cart-item-info">
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-price">${this.formatPrice(item.price)}</span>
+                    </div>
+                    <div class="cart-item-controls">
+                        <input type="number" class="item-quantity" value="${item.quantity}" min="1" data-id="${item.productId}">
+                        <button class="btn btn-danger btn-sm remove-item-btn" data-id="${item.productId}">&times;</button>
+                    </div>
+                `;
+                this.cartItemsContainer.appendChild(itemEl);
             });
         }
-        this.elements.modalTotalPrice.textContent = `${cart.calculateTotal().toLocaleString('vi-VN')}đ`;
-        this.elements.checkoutButton.disabled = cart.items.length === 0;
-    }
+       
+        this.cartTotalSpan.textContent = this.formatPrice(cartTotal);
+        this.checkoutBtn.disabled = cart.length === 0;
 
-    toggleCartModal(show = true) {
-        this.elements.cartModal.classList.toggle('active', show);
-    }
-    
-    /**
-     * Render danh sách đơn hàng.
-     * @param {Array<Order>} orders - Mảng các đối tượng Order.
-     */
-    renderOrders(orders) {
-        this.elements.orderList.innerHTML = '';
-        if (!orders || orders.length === 0) {
-            this.elements.orderList.innerHTML = `<div class="appointment-container"><i class="fas fa-receipt appointment-icon"></i><p>Bạn chưa có đơn hàng nào.</p></div>`;
-            return;
-        }
-        // Sắp xếp đơn hàng mới nhất lên đầu
-        orders.sort((a, b) => new Date(b.date) - new Date(a.date));
-        orders.forEach(order => {
-             const item = document.createElement('div');
-             item.className = 'order-card';
-             const formattedDate = new Date(order.date).toLocaleDateString('vi-VN');
-             item.innerHTML = `
-                <div class="order-card-header">
-                    <span class="order-id">Đơn hàng #${order.id.substr(-6)}</span>
-                    <span class="order-date">${formattedDate}</span>
-                </div>
-                <p>Tổng cộng: <strong class="order-total">${order.total.toLocaleString('vi-VN')}đ</strong></p>
-             `;
-             this.elements.orderList.appendChild(item);
+        // Add event listeners
+        document.querySelectorAll('.item-quantity').forEach(input => {
+            input.addEventListener('change', (e) => onUpdateQuantity(e.target.dataset.id, parseInt(e.target.value)));
+        });
+        document.querySelectorAll('.remove-item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => onRemoveItem(e.target.closest('button').dataset.id));
         });
     }
 
-    /**
-     * Cập nhật thông tin người dùng trên giao diện.
-     * @param {Customer | Admin} user - Đối tượng người dùng hiện tại.
-     */
-    updateProfile(user) {
-        if (!user) return;
-        this.elements.headerUsername.textContent = user.username;
-        this.elements.profileUsername.textContent = user.username;
+    renderOrders(orders, isAdmin, onUpdateStatus) {
+        this.orderListContainer.innerHTML = '';
+        if (orders.length === 0) {
+            this.orderListContainer.innerHTML = '<p>Bạn chưa có đơn hàng nào.</p>';
+            return;
+        }
 
-        // Xử lý hiển thị tùy theo vai trò
-        if (user.role === 'customer') {
-            this.elements.cartButton.style.display = 'block';
-            this.elements.loyaltySection.style.display = 'block';
-            this.elements.loyaltyPoints.textContent = user.loyaltyPoints.toLocaleString('vi-VN');
-            this.elements.adminControls.style.display = 'none';
-        } else if (user.role === 'admin') {
-            // Ẩn các chức năng của customer cho admin
-            this.elements.cartButton.style.display = 'none';
-            this.elements.loyaltySection.style.display = 'none';
-            this.elements.adminControls.style.display = 'block';
+        orders.forEach(order => {
+            const orderEl = document.createElement('div');
+            orderEl.className = 'order-item';
+            
+            const itemsHtml = order.items.map(item => `<li>${item.quantity} x ${item.name}</li>`).join('');
+
+            const statusOptions = ['Pending', 'Processing', 'Completed', 'Cancelled']
+                .map(s => `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`)
+                .join('');
+            
+            orderEl.innerHTML = `
+                <div class="order-header">
+                    <span>${new Date(order.date).toLocaleDateString('vi-VN')}</span>
+                     <span class="order-id">#${order.id.substr(-6)}</span>
+                </div>
+                <ul>${itemsHtml}</ul>
+                <div class="order-footer">
+                    <span class="order-total">${this.formatPrice(order.total)}</span>
+                    ${isAdmin ? `
+                        <select class="form-control status-select" data-id="${order.id}">${statusOptions}</select>
+                    ` : `
+                        <span class="order-status">${order.status}</span>
+                    `}
+                </div>
+            `;
+            this.orderListContainer.appendChild(orderEl);
+        });
+
+        if (isAdmin) {
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', (e) => onUpdateStatus(e.target.dataset.id, e.target.value));
+            });
         }
     }
 
-     /**
-     * Hiển thị modal để Thêm hoặc Sửa sản phẩm.
-     * @param {Drink | Food | null} product - Dữ liệu sản phẩm để sửa, hoặc null để thêm mới.
-     */
-    showProductModal(product = null) {
-        this.elements.productForm.reset();
+
+    // --- MODAL ---
+    
+    openProductModal(product = null) {
+        this.productForm.reset();
         if (product) {
-            // Chế độ Sửa
-            this.elements.productModalTitle.textContent = 'Chỉnh Sửa Sản Phẩm';
-            this.elements.productForm.elements['product-id'].value = product.id;
-            this.elements.productForm.elements['product-type'].value = product.type;
-            this.elements.productForm.elements['product-name'].value = product.name;
-            this.elements.productForm.elements['product-price'].value = product.price;
-            this.elements.productForm.elements['product-image'].value = product.imageUrl;
-            this.elements.productForm.elements['product-desc'].value = product.description;
-
-            if(product.type === 'drink') {
-                this.elements.productForm.elements['product-size'].value = product.size;
-            } else if (product.type === 'food') {
-                this.elements.productForm.elements['product-vegetarian'].checked = product.isVegetarian;
-            }
+            this.productModalTitle.textContent = 'Sửa Sản phẩm';
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productImage').value = product.image;
+            document.getElementById('productDescription').value = product.description;
         } else {
-            // Chế độ Thêm
-            this.elements.productModalTitle.textContent = 'Thêm Sản Phẩm Mới';
+            this.productModalTitle.textContent = 'Thêm Sản phẩm';
+            document.getElementById('productId').value = '';
         }
-        this.toggleProductTypeFields(); // Hiển thị đúng trường theo type
-        this.elements.productModal.classList.add('active');
+        this.productModal.style.display = 'block';
     }
 
-    hideProductModal() {
-        this.elements.productModal.classList.remove('active');
+    closeProductModal() {
+        this.productModal.style.display = 'none';
+    }
+
+    // --- UTILS ---
+    showAlert(message, type = 'danger') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+
+        // For auth form alerts
+        const authContainer = document.getElementById('auth-forms-container');
+        authContainer.insertBefore(alertDiv, authContainer.firstChild);
+        
+        setTimeout(() => alertDiv.remove(), 3000);
     }
     
-    /**
-     * Ẩn/hiện các trường dữ liệu riêng của Drink/Food trong form.
-     */
-    toggleProductTypeFields() {
-        const selectedType = this.elements.productType.value;
-        this.elements.drinkFields.style.display = selectedType === 'drink' ? 'block' : 'none';
-        this.elements.foodFields.style.display = selectedType === 'food' ? 'block' : 'none';
+    showAppAlert(message, type = 'success') {
+         const alertDiv = document.createElement('div');
+         alertDiv.className = `alert alert-${type}`;
+         alertDiv.style.position = 'fixed';
+         alertDiv.style.top = '20px';
+         alertDiv.style.right = '20px';
+         alertDiv.style.zIndex = '2000';
+         alertDiv.textContent = message;
+         document.body.appendChild(alertDiv);
+         setTimeout(() => alertDiv.remove(), 3000);
+    }
+
+    formatPrice(price) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(price);
     }
 }
-
-
-
-
-

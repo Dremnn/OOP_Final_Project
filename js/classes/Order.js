@@ -1,7 +1,8 @@
-export default class Order {
-    constructor(id, items, total, date, status = 'Đang xử lý') {
+class Order {
+    constructor(id, userId, items, total, date, status = 'Pending') {
         this.id = id;
-        this.items = items;
+        this.userId = userId;
+        this.items = items; // array of { productId, name, quantity, price }
         this.total = total;
         this.date = date;
         this.status = status;

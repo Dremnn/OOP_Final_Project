@@ -1,99 +1,68 @@
-import Drink from '../classes/Drink.js';
-import Food from '../classes/Food.js';
-import { ApiService } from '../services/ApiService.js';
-import { DBService } from '../services/DBService.js';
-
-/**
- * ProductManager: Chịu trách nhiệm tải và quản lý danh mục sản phẩm.
- */
-export default class ProductManager {
+class ProductManager {
     constructor() {
-        this.products = [];
-    }
-
-    /**
-     * Chuyển đổi dữ liệu thô thành một thực thể (instance) của lớp Drink hoặc Food.
-     * @param {object} p - Dữ liệu sản phẩm thô.
-     * @returns {Drink | Food | null}
-     */
-    #createProductInstance(p) {
-        switch (p.type) {
-            case 'drink':
-                return new Drink(p.id, p.name, p.price, p.description, p.imageUrl, p.size);
-            case 'food':
-                return new Food(p.id, p.name, p.price, p.description, p.imageUrl, p.isVegetarian);
-            default:
-                console.warn('Loại sản phẩm không xác định:', p);
-                return null; 
+        this.products = JSON.parse(localStorage.getItem('products')) || [];
+        // Add demo products if none exist
+        if (this.products.length === 0) {
+            this._addDemoProducts();
         }
     }
+    
+    _addDemoProducts() {
+        const demoProducts = [
+            new Product(this._generateId(), 'Cà Phê Đen', 25000, 'https://placehold.co/300x200/634832/FFFFFF?text=Cà+Phê+Đen', 'Cà phê đen đá đậm vị, không đường, dành cho người sành cà phê.'),
+            new Product(this._generateId(), 'Cà Phê Sữa', 30000, 'https://placehold.co/300x200/A87D5A/FFFFFF?text=Cà+Phê+Sữa', 'Hương vị cà phê đậm đà hòa quyện cùng vị ngọt béo của sữa đặc.'),
+            new Product(this._generateId(), 'Bạc Xỉu', 32000, 'https://placehold.co/300x200/D2B48C/333333?text=Bạc+Xỉu', 'Nhiều sữa hơn cà phê, lựa chọn nhẹ nhàng cho buổi sáng tỉnh táo.'),
+            new Product(this._generateId(), 'Trà Đào Cam Sả', 45000, 'https://placehold.co/300x200/FFC300/333333?text=Trà+Đào', 'Trà đào thanh mát kết hợp cùng vị chua nhẹ của cam và hương thơm của sả.'),
+            new Product(this._generateId(), 'Trà Vải', 42000, 'https://placehold.co/300x200/FF7F7F/FFFFFF?text=Trà+Vải', 'Hương vị ngọt ngào của trái vải tươi trong nền trà thơm dịu.'),
+            new Product(this._generateId(), 'Matcha Latte', 50000, 'https://placehold.co/300x200/88B04B/FFFFFF?text=Matcha', 'Bột matcha Nhật Bản cao cấp hòa quyện cùng sữa tươi tạo nên lớp bọt mịn.')
+        ];
+        this.products.push(...demoProducts);
+        this._saveProducts();
+    }
 
-    async loadProducts() {
-        let productsData = await DBService.getAllData('products');
-        if (!productsData || productsData.length === 0) {
-            productsData = await ApiService.getProducts();
-            await DBService.saveData('products', productsData);
-        }
-        
-        // Sửa lỗi: Truyền đúng tên thuộc tính (imageUrl, description) vào constructor
-        this.products = productsData.map(p => this.#createProductInstance(p)).filter(Boolean);
+    _saveProducts() {
+        localStorage.setItem('products', JSON.stringify(this.products));
+    }
+
+    _generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    getProducts() {
         return this.products;
     }
-
-    /**
-     * Tìm một sản phẩm trong danh sách đã tải bằng ID.
-     * @param {string} id - ID của sản phẩm.
-     * @returns {Product | undefined} - Trả về sản phẩm nếu tìm thấy.
-     */
+    
     getProductById(id) {
         return this.products.find(p => p.id === id);
     }
 
-        /**
-     * Thêm một sản phẩm mới vào hệ thống.
-     * @param {Object} productData - Dữ liệu thô từ form.
-     */
-    async addProduct(productData) {
-        // Gán ID duy nhất cho sản phẩm mới
-        const fullProductData = { ...productData, id: `prod_${Date.now()}` };
-        // Tạo một thực thể lớp chính xác
-        const newProductInstance = this.#createProductInstance(fullProductData);
-
-        if (newProductInstance) {
-            this.products.push(newProductInstance);
-            // Lưu dữ liệu thô (plain object) vào DB
-            await DBService.saveData('products', [fullProductData]);
-        }
-        return newProductInstance;
+    addProduct(name, price, image, description) {
+        const id = this._generateId();
+        const newProduct = new Product(id, name, parseFloat(price), image, description);
+        this.products.push(newProduct);
+        this._saveProducts();
+        return newProduct;
     }
 
-    /**
-     * Cập nhật một sản phẩm đã có.
-     * @param {Object} productData - Dữ liệu thô từ form.
-     */
-    async updateProduct(productData) {
-        const index = this.products.findIndex(p => p.id === productData.id);
-        if (index !== -1) {
-            // Tạo một thực thể lớp chính xác
-            const updatedInstance = this.#createProductInstance(productData);
-            if (updatedInstance) {
-                 // Cập nhật mảng products trong bộ nhớ với instance mới
-                this.products[index] = updatedInstance;
-                // Lưu dữ liệu thô (plain object) vào DB
-                await DBService.saveData('products', [productData]);
-            }
-            return updatedInstance;
+    updateProduct(id, name, price, image, description) {
+        const productIndex = this.products.findIndex(p => p.id === id);
+        if (productIndex > -1) {
+            this.products[productIndex].name = name;
+            this.products[productIndex].price = parseFloat(price);
+            this.products[productIndex].image = image;
+            this.products[productIndex].description = description;
+            this._saveProducts();
+            return this.products[productIndex];
         }
-        return null;
+        throw new Error('Không tìm thấy sản phẩm.');
     }
 
-    /**
-     * Xóa một sản phẩm.
-     * @param {string} productId - ID của sản phẩm cần xóa.
-     */
-    async deleteProduct(productId) {
-        this.products = this.products.filter(p => p.id !== productId);
-        await DBService.deleteData('products', productId);
+    deleteProduct(id) {
+        const initialLength = this.products.length;
+        this.products = this.products.filter(p => p.id !== id);
+        if (this.products.length === initialLength) {
+            throw new Error('Không tìm thấy sản phẩm để xóa.');
+        }
+        this._saveProducts();
     }
 }
-

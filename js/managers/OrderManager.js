@@ -1,43 +1,43 @@
-import Order from '../classes/Order.js';
-import { DBService } from '../services/DBService.js';
-
-/**
- * OrderManager: Chịu trách nhiệm tạo và lấy lịch sử đơn hàng.
- */
-export default class OrderManager {
+class OrderManager {
     constructor() {
-        this.orders = [];
+        this.orders = JSON.parse(localStorage.getItem('orders')) || [];
     }
 
-    /**
-     * Tạo một đơn hàng mới từ giỏ hàng.
-     * @param {CartManager} cart - Đối tượng giỏ hàng.
-     * @returns {Promise<Order | null>} - Trả về đơn hàng mới hoặc null nếu giỏ hàng rỗng.
-     */
-    async createOrder(cart) {
-        if (cart.items.length === 0) return null;
+    _saveOrders() {
+        localStorage.setItem('orders', JSON.stringify(this.orders));
+    }
 
-        const newOrder = new Order(
-            `order_${Date.now()}`,
-            cart.items,
-            cart.calculateTotal(),
-            new Date().toISOString()
-        );
-        
-        // Lưu đơn hàng mới vào IndexedDB
-        await DBService.saveData('orders', [newOrder]);
+    _generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    placeOrder(userId, cartItems, total) {
+        if (!cartItems || cartItems.length === 0) {
+            throw new Error('Giỏ hàng trống.');
+        }
+        const id = this._generateId();
+        const date = new Date().toISOString();
+        const newOrder = new Order(id, userId, cartItems, total, date);
         this.orders.push(newOrder);
+        this._saveOrders();
         return newOrder;
     }
 
-    /**
-     * Tải tất cả đơn hàng từ IndexedDB.
-     * @returns {Promise<Array<Order>>} - Mảng các đơn hàng.
-     */
-    async loadOrders() {
-        const ordersData = await DBService.getAllData('orders');
-        this.orders = ordersData.map(o => new Order(o.id, o.items, o.total, o.date, o.status));
-        return this.orders;
+    getOrdersByUser(userId) {
+        return this.orders.filter(order => order.userId === userId).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+    
+    getAllOrders() {
+        return this.orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+
+    updateOrderStatus(orderId, status) {
+        const order = this.orders.find(o => o.id === orderId);
+        if (order) {
+            order.status = status;
+            this._saveOrders();
+            return order;
+        }
+        throw new Error('Không tìm thấy đơn hàng.');
     }
 }
-

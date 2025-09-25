@@ -1,46 +1,50 @@
-/**
- * CartManager: Quản lý trạng thái và hành vi của giỏ hàng.
- */
-export default class CartManager {
+class CartManager {
     constructor() {
-        // Mảng chứa các item trong giỏ hàng, mỗi item có dạng { product: Product, quantity: number }
-        this.items = [];
+        this.cart = JSON.parse(sessionStorage.getItem('cart')) || [];
     }
 
-    /**
-     * Thêm một sản phẩm vào giỏ hàng. Nếu đã có, tăng số lượng.
-     * @param {Product} product - Đối tượng sản phẩm cần thêm.
-     */
-    addItem(product) {
-        const existingItem = this.items.find(item => item.product.id === product.id);
+    _saveCart() {
+        sessionStorage.setItem('cart', JSON.stringify(this.cart));
+    }
+
+    getCart() {
+        return this.cart;
+    }
+
+    addToCart(product, quantity = 1) {
+        const existingItem = this.cart.find(item => item.productId === product.id);
         if (existingItem) {
-            existingItem.quantity++;
+            existingItem.quantity += quantity;
         } else {
-            this.items.push({ product, quantity: 1 });
+            const cartItem = new CartItem(product, quantity);
+            this.cart.push(cartItem);
+        }
+        this._saveCart();
+    }
+
+    updateQuantity(productId, quantity) {
+        const item = this.cart.find(item => item.productId === productId);
+        if (item) {
+            if (quantity <= 0) {
+                this.removeFromCart(productId);
+            } else {
+                item.quantity = quantity;
+                this._saveCart();
+            }
         }
     }
-
-    /**
-     * Tính tổng giá trị của giỏ hàng.
-     * @returns {number} - Tổng tiền.
-     */
-    calculateTotal() {
-        return this.items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    
+    removeFromCart(productId) {
+        this.cart = this.cart.filter(item => item.productId !== productId);
+        this._saveCart();
     }
 
-    /**
-     * Lấy tổng số lượng sản phẩm trong giỏ (tính cả số lượng của từng item).
-     * @returns {number} - Tổng số sản phẩm.
-     */
-    getTotalItems() {
-        return this.items.reduce((total, item) => total + item.quantity, 0);
+    getCartTotal() {
+        return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     }
 
-    /**
-     * Xóa sạch giỏ hàng.
-     */
-    clear() {
-        this.items = [];
+    clearCart() {
+        this.cart = [];
+        this._saveCart();
     }
 }
-

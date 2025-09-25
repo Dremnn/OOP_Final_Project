@@ -1,29 +1,17 @@
 import User from './User.js';
+import { UserRole } from '../constants.js';
 
-/**
- * LỚP CON - Admin: Kế thừa từ User.
- * Đại diện cho một quản trị viên của hệ thống.
- */
+// Admin class
 export default class Admin extends User {
-    /**
-     * @param {string} username - Tên đăng nhập.
-     */
-    constructor(username) {
-        // Gọi constructor của lớp cha (User) với vai trò cố định là 'admin'
-        super(username, 'admin');
-
-        // Thuộc tính riêng của Admin, ví dụ: quyền hạn
-        // Trong thực tế, quyền hạn này sẽ được tải từ server.
-        this.permissions = ['manage_products', 'view_reports', 'manage_users'];
+    constructor(username, password, phoneNumber) {
+        super(username, password, phoneNumber, UserRole.ADMIN);
+        this.id = `ADMIN${Date.now()}`;
+        this.permissions = ["MANAGE_PRODUCTS", "MANAGE_ORDERS", "VIEW_ALL_ORDERS"];
     }
-
-    /**
-     * Phương thức riêng của Admin để kiểm tra quyền.
-     * @param {string} permission - Quyền cần kiểm tra.
-     * @returns {boolean} - True nếu có quyền, false nếu không.
-     */
-    hasPermission(permission) {
-        return this.permissions.includes(permission);
+    canAccessOrder(orderId) {
+        return true; // Admin can access all orders
+    }
+    canModifyProduct() {
+        return true;
     }
 }
-

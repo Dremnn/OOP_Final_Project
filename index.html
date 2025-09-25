@@ -3,200 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Highlands Coffee</title>
-    <!-- Các thẻ meta cho PWA -->
-    <meta name="theme-color" content="#B22830"/>
-    <link rel="apple-touch-icon" href="/images/logo-192.png">
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Liên kết CSS và Fonts -->
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Hệ Thống Quản Lý Quán Cà Phê</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Màn hình Loading ban đầu -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner"></div>
+    <div class="container">
+        <!-- Phần xác thực người dùng -->
+        <div id="authSection" class="auth-section">
+            <div id="auth-forms-container">
+                <!-- Form Đăng nhập -->
+                <form id="loginForm" class="auth-form">
+                    <h2>Đăng nhập</h2>
+                    <div id="authAlert"></div>
+                    <div class="form-group">
+                        <label for="loginUsername">Tên đăng nhập</label>
+                        <input type="text" id="loginUsername" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Mật khẩu</label>
+                        <input type="password" id="loginPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Đăng nhập</button>
+                    <p class="toggle-form">Chưa có tài khoản? <a href="#" id="showRegister">Đăng ký</a></p>
+                </form>
+
+                <!-- Form Đăng ký -->
+                <form id="registerForm" class="auth-form" style="display: none;">
+                    <h2>Đăng ký</h2>
+                    <div class="form-group">
+                        <label for="registerUsername">Tên đăng nhập</label>
+                        <input type="text" id="registerUsername" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Mật khẩu</label>
+                        <input type="password" id="registerPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Đăng ký</button>
+                    <p class="toggle-form">Đã có tài khoản? <a href="#" id="showLogin">Đăng nhập</a></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Phần ứng dụng chính (hiển thị sau khi đăng nhập) -->
+        <div id="mainApp" class="main-app" style="display: none;">
+            <div class="header">
+                <h1>Chào mừng tới Quán Cà Phê</h1>
+                <div class="user-info">
+                    <span id="currentUser"></span>
+                    <button id="logoutButton" class="btn btn-danger btn-sm">Đăng xuất</button>
+                </div>
+            </div>
+
+            <div class="app-content">
+                <!-- Khu vực sản phẩm -->
+                <div class="section-container">
+                    <div class="section-header">
+                        <h2>Sản phẩm</h2>
+                        <button id="addProductBtn" class="btn btn-primary admin-only">Thêm Sản phẩm</button>
+                    </div>
+                    <div id="productList" class="product-list"></div>
+                </div>
+
+                <!-- Khu vực giỏ hàng và đơn hàng -->
+                <div class="sidebar">
+                    <!-- Giỏ hàng -->
+                    <div class="section-container">
+                         <div class="section-header">
+                            <h2>Giỏ hàng</h2>
+                        </div>
+                        <div id="cartItems"></div>
+                        <div class="cart-summary">
+                            <strong>Tổng cộng: <span id="cartTotal">0</span></strong>
+                        </div>
+                        <button id="checkoutBtn" class="btn btn-success btn-block" disabled>Thanh toán</button>
+                    </div>
+                    <!-- Đơn hàng -->
+                     <div class="section-container">
+                        <div class="section-header">
+                            <h2>Đơn hàng của tôi</h2>
+                        </div>
+                        <div id="orderList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Trang Đăng Nhập -->
-    <div id="login-page" class="page">
-        <div class="login-container">
-            <div class="login-header">
-                <!-- Placeholder cho logo Highlands -->
-                <img src="https://www.highlandscoffee.com.vn/vnt_upload/weblink/White_logo800.png" alt="Highlands Logo" class="login-logo" style="background: #B22830; padding: 10px;">
-                <h1>Highlands Coffee</h1>
-                <p>Xin chào, vui lòng đăng nhập</p>
-            </div>
-            <form id="login-form" class="login-form">
+    <!-- Modal cho sản phẩm (Thêm/Sửa) -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeProductModal">&times;</span>
+            <h2 id="productModalTitle">Thêm Sản phẩm</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId">
                 <div class="form-group">
-                    <i class="fas fa-user"></i>
-                    <!-- Hướng dẫn đăng nhập với vai trò khác nhau -->
-                    <input type="text" id="username" placeholder="Tên đăng nhập (user / admin)" required>
+                    <label for="productName">Tên sản phẩm</label>
+                    <input type="text" id="productName" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" placeholder="Mật khẩu (ví dụ: 123)" required>
+                    <label for="productPrice">Giá</label>
+                    <input type="number" id="productPrice" class="form-control" required min="0">
                 </div>
-                <p id="login-error" class="error-message"></p>
-                <button type="submit" class="btn btn-primary">Đăng Nhập</button>
+                <div class="form-group">
+                    <label for="productImage">URL Hình ảnh</label>
+                    <input type="url" id="productImage" class="form-control" required>
+                </div>
+                 <div class="form-group">
+                    <label for="productDescription">Mô tả</label>
+                    <textarea id="productDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Lưu</button>
             </form>
         </div>
     </div>
+    
+    <!-- Scripts -->
+    <script src="js/classes/Product.js"></script>
+    <script src="js/classes/User.js"></script>
+    <script src="js/classes/Order.js"></script>
+    <script src="js/classes/CartItem.js"></script>
+    
+    <script src="js/managers/AuthManager.js"></script>
+    <script src="js/managers/ProductManager.js"></script>
+    <script src="js/managers/CartManager.js"></script>
+    <script src="js/managers/OrderManager.js"></script>
+    <script src="js/managers/UIManager.js"></script>
+    
+    <script type="module" src="js/app.js"></script>
 
-    <!-- Container chính của ứng dụng, chỉ hiển thị sau khi đăng nhập -->
-    <div id="app-container" class="app-container">
-        <!-- Trang Chủ / Thực Đơn -->
-        <main id="home-page" class="page">
-            <header class="page-header">
-                <div class="header-title">
-                    <p class="greeting">Xin chào, <span id="header-username"></span>!</p>
-                    <h2>Thực Đơn</h2>
-                </div>
-                <!-- Nút Thêm Mới cho Admin -->
-                <div id="admin-controls">
-                    <button id="add-product-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm Mới</button>
-                </div>
-                <!-- Nút giỏ hàng chỉ hiển thị cho Customer -->
-                <button id="cart-button" class="icon-button">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span id="cart-count" class="cart-count">0</span>
-                </button>
-            </header>
-            <div id="product-list" class="product-grid">
-                <!-- Danh sách sản phẩm sẽ được JS render vào đây -->
-            </div>
-        </main>
-
-        <!-- Trang Lịch Sử Đơn Hàng -->
-        <section id="orders-page" class="page">
-            <header class="page-header"><h2>Lịch Sử Đơn Hàng</h2></header>
-            <div id="order-list" class="order-list">
-                <!-- Lịch sử đơn hàng sẽ được JS render vào đây -->
-            </div>
-        </section>
-
-        <!-- Trang Đặt Hẹn -->
-        <section id="appointment-page" class="page">
-            <header class="page-header"><h2>Đặt Hẹn Trải Nghiệm</h2></header>
-            <div class="appointment-container">
-                <i class="fas fa-calendar-check appointment-icon"></i>
-                <h3>Tính năng sắp ra mắt</h3>
-                <p>Chúng tôi đang phát triển tính năng đặt hẹn trải nghiệm cà phê. Vui lòng quay lại sau!</p>
-            </div>
-        </section>
-
-        <!-- Trang Cá Nhân / Loyalty -->
-        <section id="profile-page" class="page">
-            <header class="page-header"><h2>Tài Khoản</h2></header>
-            <div class="profile-card">
-                <i class="fas fa-user-circle profile-avatar"></i>
-                <h3 id="profile-username"></h3>
-                <!-- Phần điểm thưởng chỉ hiển thị cho Customer -->
-                <div id="loyalty-section" class="loyalty-card">
-                    <h4><i class="fas fa-star"></i> Điểm Thưởng Của Bạn</h4>
-                    <p class="loyalty-points"><span id="loyalty-points">0</span> điểm</p>
-                </div>
-                <button id="logout-button" class="btn btn-secondary">Đăng Xuất</button>
-            </div>
-        </section>
-
-        <!-- Thanh Điều Hướng Dưới Cùng -->
-        <nav class="bottom-nav">
-            <a href="#home" class="nav-item active" data-page="home-page"><i class="fas fa-mug-hot"></i><span>Thực Đơn</span></a>
-            <a href="#orders" class="nav-item" data-page="orders-page"><i class="fas fa-receipt"></i><span>Đơn Hàng</span></a>
-            <a href="#appointment" class="nav-item" data-page="appointment-page"><i class="fas fa-calendar-alt"></i><span>Đặt Hẹn</span></a>
-            <a href="#profile" class="nav-item" data-page="profile-page"><i class="fas fa-user"></i><span>Cá Nhân</span></a>
-        </nav>
-    </div>
-
-    <!-- Modal Giỏ Hàng -->
-    <div id="cart-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Giỏ Hàng Của Bạn</h2>
-                <button id="close-modal-button" class="close-button">&times;</button>
-            </div>
-            <div id="modal-cart-items" class="modal-body">
-                <!-- Các sản phẩm trong giỏ hàng sẽ được JS render vào đây -->
-            </div>
-            <div class="modal-footer">
-                <div class="total-price">
-                    <strong>Tổng cộng:</strong>
-                    <span id="modal-total-price">0đ</span>
-                </div>
-                <button id="checkout-button" class="btn btn-primary">Đặt Hàng</button>
-            </div>
-        </div>
-    </div>
-    <!-- Modal Thêm/Sửa Sản Phẩm (Chỉ dành cho Admin) -->
-    <div id="product-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="product-modal-title">Thêm Sản Phẩm Mới</h2>
-                <button id="close-product-modal-btn" class="close-button">&times;</button>
-            </div>
-            <form id="product-form" class="product-form">
-                <!-- Hidden input để lưu ID khi sửa -->
-                <input type="hidden" id="product-id">
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="product-type">Loại Sản Phẩm</label>
-                        <select id="product-type" required>
-                            <option value="drink">Đồ Uống (Drink)</option>
-                            <option value="food">Đồ Ăn (Food)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-name">Tên Sản Phẩm</label>
-                        <input type="text" id="product-name" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="product-price">Giá (VNĐ)</label>
-                        <input type="number" id="product-price" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="product-image">URL Hình Ảnh</label>
-                        <input type="url" id="product-image" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="product-desc">Mô Tả</label>
-                    <textarea id="product-desc" rows="3"></textarea>
-                </div>
-
-                <!-- Các trường riêng cho từng loại sản phẩm -->
-                <div id="drink-fields" class="specific-fields">
-                    <div class="form-group">
-                        <label for="product-size">Kích Cỡ (S, M, L)</label>
-                        <input type="text" id="product-size" placeholder="S, M, L">
-                    </div>
-                </div>
-                <div id="food-fields" class="specific-fields">
-                     <div class="form-group checkbox-group">
-                        <input type="checkbox" id="product-vegetarian">
-                        <label for="product-vegetarian">Là món chay?</label>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Nạp file JS chính dạng module để nó tự động xử lý các import -->
-    <script src="js/main.js" type="module"></script>
 </body>
 </html>
-
