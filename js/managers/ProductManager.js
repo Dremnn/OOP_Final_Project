@@ -10,27 +10,31 @@ export class ProductManager {
         this.userManager = userManager;
     }
 
-    validateProductInput(name, description, price) {
+    validateProductInput(name, description, price, imageUrl) {
         if (!name) throw new ValidationException("Product name is required");
         if (price <= 0) throw new ValidationException("Product price must be positive");
+        if (!imageUrl) throw new ValidationException("Product image URL is required");
     }
 
-    createProduct(name, description, price, type, specificData, sessionToken) {
-        if (!this.userManager.isAdmin(sessionToken)) {
-            throw new AuthorizationException("Only admin can create products");
-        }
-        this.validateProductInput(name, description, price);
+    createProduct(name, description, price, imageUrl, type, specificData, sessionToken) {
+        if (!this.userManager.isAdmin(sessionToken)) {
+            throw new AuthorizationException("Only admin can create products");
+        }
+        // Truyền imageUrl vào hàm validation
+        this.validateProductInput(name, description, price, imageUrl);
 
-        let product;
-        if (type === ProductType.DRINK) {
-            product = new Drink(name, description, price, specificData.size, specificData.isHot);
-        } else {
-            product = new Food(name, description, price, specificData.isVegetarian);
-        }
+        let product;
+        if (type === ProductType.DRINK) {
+            // Truyền imageUrl khi tạo đối tượng Drink
+            product = new Drink(name, description, price, imageUrl, specificData.size, specificData.isHot);
+        } else {
+            // Truyền imageUrl khi tạo đối tượng Food
+            product = new Food(name, description, price, imageUrl, specificData.isVegetarian);
+        }
 
-        this.products.set(product.id, product);
-        return product;
-    }
+        this.products.set(product.id, product);
+        return product;
+    }
 
     updateProduct(productId, updates, sessionToken) {
         if (!this.userManager.isAdmin(sessionToken)) {
