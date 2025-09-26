@@ -1,207 +1,206 @@
-document.addEventListener('DOMContentLoaded', () => {
+// app.js
+import { UserManager } from './managers/UserManager.js';
+import { ProductManager } from './managers/ProductManager.js';
+import { CartManager } from './managers/CartManager.js';
+import { OrderManager } from './managers/OrderManager.js';
+import { UIManager } from './managers/UIManager.js';
+import { UserRole, ProductType, OrderType } from './constants.js';
 
-    // Initialize managers
-    const authManager = new AuthManager();
-    const productManager = new ProductManager();
-    const cartManager = new CartManager();
-    const orderManager = new OrderManager();
-    const uiManager = new UIManager();
-    
-    // --- STATE ---
-    let currentUser = null;
-
-    // --- FUNCTIONS ---
-
-    function initialize() {
-        currentUser = authManager.getCurrentUser();
-        if (currentUser) {
-            uiManager.showApp();
-            uiManager.renderUserInfo(currentUser);
-            loadProducts();
-            loadCart();
-            loadOrders();
-        } else {
-            uiManager.showAuth();
-        }
-        setupEventListeners();
+export class CoffeeShopApplication {
+    constructor() {
+        this.userManager = new UserManager();
+        this.productManager = new ProductManager(this.userManager);
+        this.cartManager = new CartManager(this.userManager, this.productManager);
+        this.orderManager = new OrderManager(this.userManager, this.productManager, this.cartManager);
+        this.uiManager = new UIManager(this);
+        this.currentSession = null;
     }
 
-    function loadProducts() {
-        const products = productManager.getProducts();
-        const isAdmin = authManager.isUserAdmin();
-        uiManager.renderProducts(products, isAdmin, handleAddToCart, handleEditProduct, handleDeleteProduct);
-    }
-    
-    function loadCart() {
-        const cart = cartManager.getCart();
-        const total = cartManager.getCartTotal();
-        uiManager.renderCart(cart, total, handleUpdateQuantity, handleRemoveFromCart);
-    }
-
-    function loadOrders() {
-        const isAdmin = authManager.isUserAdmin();
-        const orders = isAdmin ? orderManager.getAllOrders() : orderManager.getOrdersByUser(currentUser.username);
-        uiManager.renderOrders(orders, isAdmin, handleUpdateOrderStatus);
-    }
-
-    // --- EVENT HANDLERS ---
-    
-    function handleLogin(e) {
-        e.preventDefault();
-        const username = e.target.loginUsername.value;
-        const password = e.target.loginPassword.value;
+    initialize() {
         try {
-            currentUser = authManager.login(username, password);
-            initialize();
+            // Create default admin user
+            this.userManager.registerUser("admin", "admin123", "0123456789", UserRole.ADMIN);
+            const adminToken = this.userManager.login("admin", "admin123");
+            
+            // Add some sample products
+            this.productManager.createProduct(
+                "Cappuccino", 
+                "Rich coffee with steamed milk", 
+                45000, 
+                ProductType.DRINK, 
+                {size: "M", isHot: true}, 
+                adminToken
+            );
+            
+            this.productManager.createProduct(
+                "Espresso", 
+                "Strong black coffee", 
+                35000, 
+                ProductType.DRINK, 
+                {size: "S", isHot: true}, 
+                adminToken
+            );
+            
+            this.productManager.createProduct(
+                "Iced Latte", 
+                "Smooth coffee with cold milk", 
+                50000, 
+                ProductType.DRINK, 
+                {size: "L", isHot: false}, 
+                adminToken
+            );
+            
+            this.productManager.createProduct(
+                "Croissant", 
+                "Buttery pastry", 
+                25000, 
+                ProductType.FOOD, 
+                {isVegetarian: false}, 
+                adminToken
+            );
+            
+            this.productManager.createProduct(
+                "Veggie Sandwich", 
+                "Fresh vegetables in whole grain bread", 
+                35000, 
+                ProductType.FOOD, 
+                {isVegetarian: true}, 
+                adminToken
+            );
+
+            // Logout admin after initialization
+            this.userManager.logout(adminToken);
+            
+            // Setup UI event listeners
+            this.uiManager.setupEventListeners();
+            
+            console.log("Application initialized successfully.");
+            
+            // Show demo information
+            this.showDemoInfo();
+            
         } catch (error) {
-            uiManager.showAlert(error.message);
+            console.error("Error initializing application:", error.message);
+            this.uiManager.showAlert("Failed to initialize application: " + error.message);
         }
     }
 
-    function handleRegister(e) {
-        e.preventDefault();
-        const username = e.target.registerUsername.value;
-        const password = e.target.registerPassword.value;
-        try {
-            authManager.register(username, password);
-            uiManager.showAlert('Đăng ký thành công! Vui lòng đăng nhập.', 'success');
-            uiManager.showLogin();
-            e.target.reset();
-        } catch (error) {
-            uiManager.showAlert(error.message);
+    showDemoInfo() {
+        const authAlert = document.getElementById('authAlert');
+        if (authAlert) {
+            authAlert.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Demo Accounts:</strong><br>
+                    Admin: username "admin", password "admin123"<br>
+                    Or register as a new customer
+                </div>
+            `;
         }
     }
 
-    function handleLogout() {
-        authManager.logout();
-        currentUser = null;
-        initialize();
+    // Getter methods for managers (useful for UI)
+    getUserManager() {
+        return this.userManager;
     }
 
-    function handleProductFormSubmit(e) {
-        e.preventDefault();
-        const id = e.target.productId.value;
-        const name = e.target.productName.value;
-        const price = e.target.productPrice.value;
-        const image = e.target.productImage.value;
-        const description = e.target.productDescription.value;
+    getProductManager() {
+        return this.productManager;
+    }
 
-        try {
-            if (id) {
-                productManager.updateProduct(id, name, price, image, description);
-                 uiManager.showAppAlert('Cập nhật sản phẩm thành công!');
-            } else {
-                productManager.addProduct(name, price, image, description);
-                uiManager.showAppAlert('Thêm sản phẩm thành công!');
-            }
-            uiManager.closeProductModal();
-            loadProducts();
-        } catch(error) {
-            uiManager.showAppAlert(error.message, 'danger');
+    getCartManager() {
+        return this.cartManager;
+    }
+
+    getOrderManager() {
+        return this.orderManager;
+    }
+
+    getUIManager() {
+        return this.uiManager;
+    }
+
+    // Session management
+    setCurrentSession(sessionToken) {
+        this.currentSession = sessionToken;
+    }
+
+    getCurrentSession() {
+        return this.currentSession;
+    }
+
+    clearCurrentSession() {
+        this.currentSession = null;
+    }
+
+    // Helper method to check if current user is authenticated
+    isAuthenticated() {
+        return this.currentSession !== null && this.userManager.getCurrentUser(this.currentSession) !== null;
+    }
+
+    // Helper method to get current user
+    getCurrentUser() {
+        if (this.currentSession) {
+            return this.userManager.getCurrentUser(this.currentSession);
         }
+        return null;
     }
-    
-    function handleAddToCart(productId) {
-        const product = productManager.getProductById(productId);
-        if (product) {
-            cartManager.addToCart(product);
-            loadCart();
-            uiManager.showAppAlert(`Đã thêm "${product.name}" vào giỏ hàng.`);
+
+    // Helper method to check if current user is admin
+    isCurrentUserAdmin() {
+        return this.userManager.isAdmin(this.currentSession);
+    }
+
+    // Application lifecycle methods
+    start() {
+        console.log("Coffee Shop Application starting...");
+        this.initialize();
+        console.log("Coffee Shop Application started successfully.");
+    }
+
+    shutdown() {
+        console.log("Coffee Shop Application shutting down...");
+        if (this.currentSession) {
+            this.userManager.logout(this.currentSession);
+            this.currentSession = null;
         }
+        console.log("Coffee Shop Application shut down complete.");
     }
+}
 
-    function handleUpdateQuantity(productId, quantity) {
-        cartManager.updateQuantity(productId, quantity);
-        loadCart();
-    }
-    
-    function handleRemoveFromCart(productId) {
-        cartManager.removeFromCart(productId);
-        loadCart();
-    }
+// Create global application instance
+const app = new CoffeeShopApplication();
 
-    function handleEditProduct(productId) {
-        const product = productManager.getProductById(productId);
-        if (product) {
-            uiManager.openProductModal(product);
-        }
-    }
-    
-    function handleDeleteProduct(productId) {
-        if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-            try {
-                productManager.deleteProduct(productId);
-                uiManager.showAppAlert('Đã xóa sản phẩm.');
-                loadProducts();
-            } catch (error) {
-                uiManager.showAppAlert(error.message, 'danger');
-            }
-        }
-    }
+// Make app available globally for UI functions
+window.app = app;
+window.uiManager = app.getUIManager();
 
-    function handleCheckout() {
-        try {
-            const cart = cartManager.getCart();
-            const total = cartManager.getCartTotal();
-            const order = orderManager.placeOrder(currentUser.username, cart, total);
-            cartManager.clearCart();
-            loadCart();
-            loadOrders();
-            uiManager.showAppAlert(`Đặt hàng thành công! Mã đơn hàng: #${order.id.substr(-6)}`, 'success');
-        } catch (error) {
-            uiManager.showAppAlert(error.message, 'danger');
-        }
-    }
+// Global UI functions that will be called from HTML
+window.switchAuthTab = (tab) => app.uiManager.switchAuthTab(tab);
+window.login = () => app.uiManager.login();
+window.register = () => app.uiManager.register();
+window.logout = () => app.uiManager.logout();
+window.addToCart = (productId, quantity) => app.uiManager.addToCart(productId, quantity);
+window.updateCartQuantity = (itemId, newQuantity) => app.uiManager.updateCartQuantity(itemId, newQuantity);
+window.updateOrderStatus = (orderId, newStatus) => app.uiManager.updateOrderStatus(orderId, newStatus);
+window.openProductModal = (productId) => app.uiManager.openProductModal(productId);
+window.closeProductModal = () => app.uiManager.closeProductModal();
+window.toggleProductTypeFields = () => app.uiManager.toggleProductTypeFields();
+window.saveProduct = () => app.uiManager.saveProduct();
+window.editProduct = (productId) => app.uiManager.editProduct(productId);
+window.deleteProduct = (productId) => app.uiManager.deleteProduct(productId);
+window.openCheckoutModal = () => app.uiManager.openCheckoutModal();
+window.closeCheckoutModal = () => app.uiManager.closeCheckoutModal();
+window.toggleOrderFields = () => app.uiManager.toggleOrderFields();
+window.placeOrder = () => app.uiManager.placeOrder();
 
-    function handleUpdateOrderStatus(orderId, status) {
-        try {
-            orderManager.updateOrderStatus(orderId, status);
-            uiManager.showAppAlert(`Cập nhật trạng thái đơn hàng #${orderId.substr(-6)} thành công.`);
-            // No need to reload all orders, could optimize this later
-            loadOrders();
-        } catch(error) {
-            uiManager.showAppAlert(error.message, 'danger');
-        }
-    }
-
-    // --- SETUP LISTENERS (run once) ---
-
-    function setupEventListeners() {
-        // Auth
-        uiManager.loginForm.addEventListener('submit', handleLogin);
-        uiManager.registerForm.addEventListener('submit', handleRegister);
-        uiManager.showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); uiManager.showRegister(); });
-        uiManager.showLoginLink.addEventListener('click', (e) => { e.preventDefault(); uiManager.showLogin(); });
-        
-        // This check is to avoid adding listeners multiple times
-        if (!document.getElementById('logoutButton')._eventAttached) {
-             document.getElementById('logoutButton').addEventListener('click', handleLogout);
-             document.getElementById('logoutButton')._eventAttached = true;
-        }
-
-        // Product Modal
-        if (!document.getElementById('addProductBtn')._eventAttached) {
-            document.getElementById('addProductBtn').addEventListener('click', () => uiManager.openProductModal());
-            document.getElementById('addProductBtn')._eventAttached = true;
-        }
-
-        uiManager.productForm.addEventListener('submit', handleProductFormSubmit);
-        uiManager.closeProductModalBtn.addEventListener('click', () => uiManager.closeProductModal());
-
-        // Checkout
-        if (!uiManager.checkoutBtn._eventAttached) {
-            uiManager.checkoutBtn.addEventListener('click', handleCheckout);
-            uiManager.checkoutBtn._eventAttached = true;
-        }
-        
-        // Close modal on outside click
-        window.addEventListener('click', (event) => {
-            if (event.target === uiManager.productModal) {
-                uiManager.closeProductModal();
-            }
-        });
-    }
-
-    // --- START ---
-    initialize();
+// Initialize application when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    app.start();
 });
+
+// Handle page unload
+window.addEventListener('beforeunload', () => {
+    app.shutdown();
+});
+
+export default app;

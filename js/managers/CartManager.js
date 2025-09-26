@@ -1,50 +1,58 @@
-class CartManager {
-    constructor() {
-        this.cart = JSON.parse(sessionStorage.getItem('cart')) || [];
+// managers/CartManager.js
+import { AuthorizationException, ValidationException } from '../exceptions.js';
+import { Customer } from '../classes/Customer.js';
+import { CartItem } from '../classes/CartItem.js';
+
+export class CartManager {
+    constructor(userManager, productManager) {
+        this.userCarts = new Map();
+        this.userManager = userManager;
+        this.productManager = productManager;
     }
 
-    _saveCart() {
-        sessionStorage.setItem('cart', JSON.stringify(this.cart));
-    }
-
-    getCart() {
-        return this.cart;
-    }
-
-    addToCart(product, quantity = 1) {
-        const existingItem = this.cart.find(item => item.productId === product.id);
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            const cartItem = new CartItem(product, quantity);
-            this.cart.push(cartItem);
+    addToCart(productId, quantity, sessionToken) {
+        const user = this.userManager.getCurrentUser(sessionToken);
+        if (!(user instanceof Customer)) {
+            throw new AuthorizationException("Only customers can add items to cart");
         }
-        this._saveCart();
+
+        const product = this.productManager.getProductById(productId);
+        if (!product || !product.isAvailable) {
+            throw new ValidationException("Product not available");
+        }
+
+        const customerId = user.id;
+        if (!this.userCarts.has(customerId)) {
+            this.userCarts.set(customerId, []);
+        }
+
+        const cartItem = new CartItem(productId, customerId, quantity, product.price);
+        this.userCarts.get(customerId).push(cartItem);
+        return cartItem;
     }
 
-    updateQuantity(productId, quantity) {
-        const item = this.cart.find(item => item.productId === productId);
+    getCart(sessionToken) {
+        const user = this.userManager.getCurrentUser(sessionToken);
+        if (!(user instanceof Customer)) {
+            throw new AuthorizationException("Only customers can view cart");
+        }
+        return this.userCarts.get(user.id) || [];
+    }
+
+    updateCartItemQuantity(itemId, newQuantity, sessionToken) {
+        const cart = this.getCart(sessionToken);
+        const item = cart.find(item => item.id === itemId);
         if (item) {
-            if (quantity <= 0) {
-                this.removeFromCart(productId);
+            if (newQuantity <= 0) {
+                const index = cart.indexOf(item);
+                cart.splice(index, 1);
             } else {
-                item.quantity = quantity;
-                this._saveCart();
+                item.updateQuantity(newQuantity);
             }
         }
     }
-    
-    removeFromCart(productId) {
-        this.cart = this.cart.filter(item => item.productId !== productId);
-        this._saveCart();
-    }
 
-    getCartTotal() {
-        return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    }
-
-    clearCart() {
-        this.cart = [];
-        this._saveCart();
+    clearCart(customerId) {
+        this.userCarts.delete(customerId);
     }
 }

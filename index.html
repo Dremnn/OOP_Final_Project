@@ -1,136 +1,189 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Quán Cà Phê</title>
+    <title>Coffee Shop Management System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="container">
-        <!-- Phần xác thực người dùng -->
+        <div class="header">
+            <h1>☕ Coffee Shop Management System</h1>
+            <p>Complete order management solution</p>
+        </div>
+
+        <!-- Authentication Section -->
         <div id="authSection" class="auth-section">
-            <div id="auth-forms-container">
-                <!-- Form Đăng nhập -->
-                <form id="loginForm" class="auth-form">
-                    <h2>Đăng nhập</h2>
-                    <div id="authAlert"></div>
-                    <div class="form-group">
-                        <label for="loginUsername">Tên đăng nhập</label>
-                        <input type="text" id="loginUsername" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Mật khẩu</label>
-                        <input type="password" id="loginPassword" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Đăng nhập</button>
-                    <p class="toggle-form">Chưa có tài khoản? <a href="#" id="showRegister">Đăng ký</a></p>
-                </form>
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="switchAuthTab('login')">Login</button>
+                <button class="tab-button" onclick="switchAuthTab('register')">Register</button>
+            </div>
 
-                <!-- Form Đăng ký -->
-                <form id="registerForm" class="auth-form" style="display: none;">
-                    <h2>Đăng ký</h2>
-                    <div class="form-group">
-                        <label for="registerUsername">Tên đăng nhập</label>
-                        <input type="text" id="registerUsername" class="form-control" required>
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password">
+                </div>
+                <button class="btn" onclick="login()">Login</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <div class="form-group">
+                    <label>Username:</label>
+                    <input type="text" id="regUsername" placeholder="Choose username">
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="regPassword" placeholder="Choose password (min 6 chars)">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input type="tel" id="regPhone" placeholder="Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label>Role:</label>
+                    <select id="regRole">
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="register()">Register</button>
+            </div>
+
+            <div id="authAlert"></div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="mainApp" class="main-app hidden">
+            <div class="user-info">
+                <div>
+                    <span id="userWelcome">Welcome!</span>
+                    <span id="userRole" class="status-badge"></span>
+                </div>
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="sections">
+                <!-- Products Section -->
+                <div class="section">
+                    <h3>🛍️ Products</h3>
+                    <div id="adminProductControls" class="hidden">
+                        <button class="btn btn-success" onclick="openProductModal()">Add Product</button>
                     </div>
-                    <div class="form-group">
-                        <label for="registerPassword">Mật khẩu</label>
-                        <input type="password" id="registerPassword" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Đăng ký</button>
-                    <p class="toggle-form">Đã có tài khoản? <a href="#" id="showLogin">Đăng nhập</a></p>
-                </form>
+                    <div id="productsGrid" class="product-grid"></div>
+                </div>
+
+                <!-- Cart Section (Customer only) -->
+                <div id="cartSection" class="section">
+                    <h3>🛒 Shopping Cart</h3>
+                    <div id="cartItems"></div>
+                    <div id="cartTotal"></div>
+                    <button id="checkoutBtn" class="btn btn-success" onclick="openCheckoutModal()">Checkout</button>
+                </div>
+
+                <!-- Orders Section -->
+                <div class="section">
+                    <h3>📋 Orders</h3>
+                    <div id="ordersContainer"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Phần ứng dụng chính (hiển thị sau khi đăng nhập) -->
-        <div id="mainApp" class="main-app" style="display: none;">
-            <div class="header">
-                <h1>Chào mừng tới Quán Cà Phê</h1>
-                <div class="user-info">
-                    <span id="currentUser"></span>
-                    <button id="logoutButton" class="btn btn-danger btn-sm">Đăng xuất</button>
-                </div>
-            </div>
-
-            <div class="app-content">
-                <!-- Khu vực sản phẩm -->
-                <div class="section-container">
-                    <div class="section-header">
-                        <h2>Sản phẩm</h2>
-                        <button id="addProductBtn" class="btn btn-primary admin-only">Thêm Sản phẩm</button>
-                    </div>
-                    <div id="productList" class="product-list"></div>
-                </div>
-
-                <!-- Khu vực giỏ hàng và đơn hàng -->
-                <div class="sidebar">
-                    <!-- Giỏ hàng -->
-                    <div class="section-container">
-                         <div class="section-header">
-                            <h2>Giỏ hàng</h2>
-                        </div>
-                        <div id="cartItems"></div>
-                        <div class="cart-summary">
-                            <strong>Tổng cộng: <span id="cartTotal">0</span></strong>
-                        </div>
-                        <button id="checkoutBtn" class="btn btn-success btn-block" disabled>Thanh toán</button>
-                    </div>
-                    <!-- Đơn hàng -->
-                     <div class="section-container">
-                        <div class="section-header">
-                            <h2>Đơn hàng của tôi</h2>
-                        </div>
-                        <div id="orderList"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="alertContainer"></div>
     </div>
 
-    <!-- Modal cho sản phẩm (Thêm/Sửa) -->
+    <!-- Product Modal -->
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <span class="close-button" id="closeProductModal">&times;</span>
-            <h2 id="productModalTitle">Thêm Sản phẩm</h2>
-            <form id="productForm">
-                <input type="hidden" id="productId">
+            <span class="close" onclick="closeProductModal()">&times;</span>
+            <h3>Add/Edit Product</h3>
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="productName" placeholder="Product name">
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <textarea id="productDescription" placeholder="Product description"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Price (VND):</label>
+                <input type="number" id="productPrice" placeholder="Price">
+            </div>
+            <div class="form-group">
+                <label>Type:</label>
+                <select id="productType" onchange="toggleProductTypeFields()">
+                    <option value="DRINK">Drink</option>
+                    <option value="FOOD">Food</option>
+                </select>
+            </div>
+            
+            <div id="drinkFields">
                 <div class="form-group">
-                    <label for="productName">Tên sản phẩm</label>
-                    <input type="text" id="productName" class="form-control" required>
+                    <label>Size:</label>
+                    <select id="productSize">
+                        <option value="S">Small</option>
+                        <option value="M">Medium</option>
+                        <option value="L">Large</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="productPrice">Giá</label>
-                    <input type="number" id="productPrice" class="form-control" required min="0">
+                    <label>
+                        <input type="checkbox" id="productIsHot"> Hot Drink
+                    </label>
                 </div>
+            </div>
+
+            <div id="foodFields" class="hidden">
                 <div class="form-group">
-                    <label for="productImage">URL Hình ảnh</label>
-                    <input type="url" id="productImage" class="form-control" required>
+                    <label>
+                        <input type="checkbox" id="productIsVegetarian"> Vegetarian
+                    </label>
                 </div>
-                 <div class="form-group">
-                    <label for="productDescription">Mô tả</label>
-                    <textarea id="productDescription" class="form-control" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Lưu</button>
-            </form>
+            </div>
+
+            <button class="btn btn-success" onclick="saveProduct()">Save Product</button>
         </div>
     </div>
-    
-    <!-- Scripts -->
-    <script src="js/classes/Product.js"></script>
-    <script src="js/classes/User.js"></script>
-    <script src="js/classes/Order.js"></script>
-    <script src="js/classes/CartItem.js"></script>
-    
-    <script src="js/managers/AuthManager.js"></script>
-    <script src="js/managers/ProductManager.js"></script>
-    <script src="js/managers/CartManager.js"></script>
-    <script src="js/managers/OrderManager.js"></script>
-    <script src="js/managers/UIManager.js"></script>
-    
-    <script type="module" src="js/app.js"></script>
 
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCheckoutModal()">&times;</span>
+            <h3>Checkout</h3>
+            <div class="form-group">
+                <label>Order Type:</label>
+                <select id="orderType" onchange="toggleOrderFields()">
+                    <option value="REGULAR_ORDER">Regular Delivery</option>
+                    <option value="EXPRESS_ORDER">Express Pickup</option>
+                </select>
+            </div>
+            
+            <div id="regularOrderFields">
+                <div class="form-group">
+                    <label>Delivery Address:</label>
+                    <textarea id="deliveryAddress" placeholder="Enter your full address"></textarea>
+                </div>
+            </div>
+
+            <div id="expressOrderFields" class="hidden">
+                <div class="form-group">
+                    <label>Pickup Location:</label>
+                    <input type="text" id="pickupLocation" placeholder="Pickup location">
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="placeOrder()">Place Order</button>
+        </div>
+    </div>
+
+    <!-- Load main application as ES module -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

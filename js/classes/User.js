@@ -1,7 +1,17 @@
-class User {
-    constructor(username, password, isAdmin = false) {
+// Base User class
+export class User {
+    constructor(username, password, phoneNumber, role) {
         this.username = username;
-        this.password = password; // In a real app, this would be hashed
-        this.isAdmin = isAdmin;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.role = role;
+    }
+
+    canAccessOrder(orderId) {
+        throw new Error("Abstract method must be implemented");
+    }
+
+    canModifyProduct() {
+        throw new Error("Abstract method must be implemented");
     }
 }
