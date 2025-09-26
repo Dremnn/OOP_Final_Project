@@ -3,183 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coffee Shop Management System</title>
+    <title>Highlands Coffee - Premium Coffee Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Background particles effect -->
+    <div class="particles-container">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
     <div class="container">
+        <!-- Header with Highlands Coffee branding -->
         <div class="header">
-            <h1>☕ Coffee Shop Management System</h1>
-            <p>Complete order management solution</p>
+            <div class="header-content">
+                <i class="fas fa-coffee header-icon"></i>
+                <h1>Highlands Coffee</h1>
+                <p>Premium Coffee Experience Since 1999</p>
+                <div class="header-decorations">
+                    <i class="fas fa-leaf"></i>
+                    <i class="fas fa-heart"></i>
+                    <i class="fas fa-leaf"></i>
+                </div>
+            </div>
         </div>
 
         <!-- Authentication Section -->
         <div id="authSection" class="auth-section">
-            <div class="tab-buttons">
-                <button class="tab-button active" onclick="switchAuthTab('login')">Login</button>
-                <button class="tab-button" onclick="switchAuthTab('register')">Register</button>
-            </div>
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h2><i class="fas fa-user-circle"></i> Welcome Back</h2>
+                    <p>Sign in to enjoy your personalized coffee experience</p>
+                </div>
 
-            <!-- Login Form -->
-            <div id="loginForm">
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="switchAuthTab('login')">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                    <button class="tab-button" onclick="switchAuthTab('register')">
+                        <i class="fas fa-user-plus"></i> Join Us
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password">
-                </div>
-                <button class="btn" onclick="login()">Login</button>
-            </div>
 
-            <!-- Register Form -->
-            <div id="registerForm" class="hidden">
-                <div class="form-group">
-                    <label>Username:</label>
-                    <input type="text" id="regUsername" placeholder="Choose username">
+                <!-- Login Form -->
+                <div id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <input type="text" id="loginUsername" placeholder="Enter your username" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" class="form-input">
+                    </div>
+                    <button class="btn btn-primary" onclick="login()">
+                        <i class="fas fa-coffee"></i> Start Your Coffee Journey
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>Password:</label>
-                    <input type="password" id="regPassword" placeholder="Choose password (min 6 chars)">
-                </div>
-                <div class="form-group">
-                    <label>Phone Number:</label>
-                    <input type="tel" id="regPhone" placeholder="Enter phone number">
-                </div>
-                <div class="form-group">
-                    <label>Role:</label>
-                    <select id="regRole">
-                        <option value="CUSTOMER">Customer</option>
-                        <option value="ADMIN">Admin</option>
-                    </select>
-                </div>
-                <button class="btn" onclick="register()">Register</button>
-            </div>
 
-            <div id="authAlert"></div>
+                <!-- Register Form -->
+                <div id="registerForm" class="auth-form hidden">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Username</label>
+                        <input type="text" id="regUsername" placeholder="Choose your username" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="regPassword" placeholder="Create strong password (min 6 chars)" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Phone Number</label>
+                        <input type="tel" id="regPhone" placeholder="Your contact number" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user-tag"></i> I am a</label>
+                        <select id="regRole" class="form-select">
+                            <option value="CUSTOMER"><i class="fas fa-user"></i> Coffee Lover</option>
+                            <option value="ADMIN"><i class="fas fa-crown"></i> Store Manager</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="register()">
+                        <i class="fas fa-heart"></i> Join Highlands Family
+                    </button>
+                </div>
+
+                <div id="authAlert" class="auth-alert"></div>
+            </div>
         </div>
 
         <!-- Main Application -->
         <div id="mainApp" class="main-app hidden">
-            <div class="user-info">
-                <div>
-                    <span id="userWelcome">Welcome!</span>
-                    <span id="userRole" class="status-badge"></span>
+            <!-- User Dashboard Header -->
+            <div class="user-dashboard">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <h3 id="userWelcome">Welcome back!</h3>
+                        <span id="userRole" class="role-badge"></span>
+                    </div>
                 </div>
-                <button class="btn btn-danger" onclick="logout()">Logout</button>
+                <button class="btn btn-danger logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
             </div>
 
-            <div class="sections">
+            <!-- Main Content Grid -->
+            <div class="content-grid">
                 <!-- Products Section -->
-                <div class="section">
-                    <h3>🛍️ Products</h3>
-                    <div id="adminProductControls" class="hidden">
-                        <button class="btn btn-success" onclick="openProductModal()">Add Product</button>
+                <div class="content-section products-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-coffee"></i> Our Premium Menu</h3>
+                        <div id="adminProductControls" class="admin-controls hidden">
+                            <button class="btn btn-add-product" onclick="openProductModal()">
+                                <i class="fas fa-plus"></i> Add New Item
+                            </button>
+                        </div>
                     </div>
-                    <div id="productsGrid" class="product-grid"></div>
+                    <div id="productsGrid" class="products-grid"></div>
                 </div>
 
                 <!-- Cart Section (Customer only) -->
-                <div id="cartSection" class="section">
-                    <h3>🛒 Shopping Cart</h3>
-                    <div id="cartItems"></div>
-                    <div id="cartTotal"></div>
-                    <button id="checkoutBtn" class="btn btn-success" onclick="openCheckoutModal()">Checkout</button>
+                <div id="cartSection" class="content-section cart-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-shopping-cart"></i> Your Order</h3>
+                    </div>
+                    <div class="cart-container">
+                        <div id="cartItems" class="cart-items"></div>
+                        <div id="cartTotal" class="cart-total"></div>
+                        <button id="checkoutBtn" class="btn btn-checkout hidden" onclick="openCheckoutModal()">
+                            <i class="fas fa-credit-card"></i> Proceed to Checkout
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Orders Section -->
-                <div class="section">
-                    <h3>📋 Orders</h3>
-                    <div id="ordersContainer"></div>
+                <div class="content-section orders-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-receipt"></i> Order History</h3>
+                    </div>
+                    <div id="ordersContainer" class="orders-container"></div>
                 </div>
             </div>
         </div>
 
-        <div id="alertContainer"></div>
+        <div id="alertContainer" class="alert-container"></div>
     </div>
 
     <!-- Product Modal -->
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeProductModal()">&times;</span>
-            <h3>Add/Edit Product</h3>
-            <div class="form-group">
-                <label>Name:</label>
-                <input type="text" id="productName" placeholder="Product name">
+            <div class="modal-header">
+                <h3><i class="fas fa-coffee"></i> Manage Product</h3>
+                <span class="modal-close" onclick="closeProductModal()">
+                    <i class="fas fa-times"></i>
+                </span>
             </div>
-            <div class="form-group">
-                <label>Description:</label>
-                <textarea id="productDescription" placeholder="Product description"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Price (VND):</label>
-                <input type="number" id="productPrice" placeholder="Price">
-            </div>
-            <div class="form-group">
-                <label>Type:</label>
-                <select id="productType" onchange="toggleProductTypeFields()">
-                    <option value="DRINK">Drink</option>
-                    <option value="FOOD">Food</option>
-                </select>
-            </div>
-            
-            <div id="drinkFields">
+            <div class="modal-body">
                 <div class="form-group">
-                    <label>Size:</label>
-                    <select id="productSize">
-                        <option value="S">Small</option>
-                        <option value="M">Medium</option>
-                        <option value="L">Large</option>
+                    <label><i class="fas fa-tag"></i> Product Name</label>
+                    <input type="text" id="productName" placeholder="Enter product name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-align-left"></i> Description</label>
+                    <textarea id="productDescription" placeholder="Describe your product" class="form-textarea"></textarea>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-dollar-sign"></i> Price (VND)</label>
+                    <input type="number" id="productPrice" placeholder="Enter price" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-list"></i> Category</label>
+                    <select id="productType" onchange="toggleProductTypeFields()" class="form-select">
+                        <option value="DRINK"><i class="fas fa-coffee"></i> Beverages</option>
+                        <option value="FOOD"><i class="fas fa-utensils"></i> Food & Snacks</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="productIsHot"> Hot Drink
-                    </label>
+                
+                <div id="drinkFields" class="product-specific-fields">
+                    <div class="form-group">
+                        <label><i class="fas fa-expand-arrows-alt"></i> Size</label>
+                        <select id="productSize" class="form-select">
+                            <option value="S">Small</option>
+                            <option value="M">Medium</option>
+                            <option value="L">Large</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="productIsHot" class="form-checkbox">
+                            <span class="checkmark"></span>
+                            <i class="fas fa-fire"></i> Hot Beverage
+                        </label>
+                    </div>
+                </div>
+
+                <div id="foodFields" class="product-specific-fields hidden">
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="productIsVegetarian" class="form-checkbox">
+                            <span class="checkmark"></span>
+                            <i class="fas fa-leaf"></i> Vegetarian Friendly
+                        </label>
+                    </div>
                 </div>
             </div>
-
-            <div id="foodFields" class="hidden">
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="productIsVegetarian"> Vegetarian
-                    </label>
-                </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveProduct()">
+                    <i class="fas fa-save"></i> Save Product
+                </button>
             </div>
-
-            <button class="btn btn-success" onclick="saveProduct()">Save Product</button>
         </div>
     </div>
 
     <!-- Checkout Modal -->
     <div id="checkoutModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeCheckoutModal()">&times;</span>
-            <h3>Checkout</h3>
-            <div class="form-group">
-                <label>Order Type:</label>
-                <select id="orderType" onchange="toggleOrderFields()">
-                    <option value="REGULAR_ORDER">Regular Delivery</option>
-                    <option value="EXPRESS_ORDER">Express Pickup</option>
-                </select>
+            <div class="modal-header">
+                <h3><i class="fas fa-shopping-bag"></i> Complete Your Order</h3>
+                <span class="modal-close" onclick="closeCheckoutModal()">
+                    <i class="fas fa-times"></i>
+                </span>
             </div>
-            
-            <div id="regularOrderFields">
+            <div class="modal-body">
                 <div class="form-group">
-                    <label>Delivery Address:</label>
-                    <textarea id="deliveryAddress" placeholder="Enter your full address"></textarea>
+                    <label><i class="fas fa-truck"></i> Delivery Option</label>
+                    <select id="orderType" onchange="toggleOrderFields()" class="form-select">
+                        <option value="REGULAR_ORDER">Home Delivery (30-45 mins)</option>
+                        <option value="EXPRESS_ORDER">Store Pickup (15-20 mins)</option>
+                    </select>
+                </div>
+                
+                <div id="regularOrderFields" class="order-fields">
+                    <div class="form-group">
+                        <label><i class="fas fa-map-marker-alt"></i> Delivery Address</label>
+                        <textarea id="deliveryAddress" placeholder="Enter your complete delivery address" class="form-textarea"></textarea>
+                    </div>
+                </div>
+
+                <div id="expressOrderFields" class="order-fields hidden">
+                    <div class="form-group">
+                        <label><i class="fas fa-store"></i> Pickup Location</label>
+                        <input type="text" id="pickupLocation" placeholder="Choose pickup location" class="form-input">
+                    </div>
                 </div>
             </div>
-
-            <div id="expressOrderFields" class="hidden">
-                <div class="form-group">
-                    <label>Pickup Location:</label>
-                    <input type="text" id="pickupLocation" placeholder="Pickup location">
-                </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-large" onclick="placeOrder()">
+                    <i class="fas fa-check-circle"></i> Confirm Order
+                </button>
             </div>
-
-            <button class="btn btn-success" onclick="placeOrder()">Place Order</button>
         </div>
     </div>
 
