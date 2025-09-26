@@ -113,6 +113,21 @@
                 </button>
             </div>
 
+            <!-- Navigation Bar -->
+            <div class="navigation-bar">
+                <div class="nav-buttons">
+                    <button class="filter-btn active" data-type="ALL" onclick="filterProducts('ALL')">
+                        <i class="fas fa-th-large"></i> All Items
+                    </button>
+                    <button class="filter-btn" data-type="DRINK" onclick="filterProducts('DRINK')">
+                        <i class="fas fa-coffee"></i> Beverages
+                    </button>
+                    <button class="filter-btn" data-type="FOOD" onclick="filterProducts('FOOD')">
+                        <i class="fas fa-utensils"></i> Food & Snacks
+                    </button>
+                </div>
+            </div>
+
             <!-- Main Content Grid -->
             <div class="content-grid">
                 <!-- Products Section -->
@@ -176,6 +191,10 @@
                 <div class="form-group">
                     <label><i class="fas fa-dollar-sign"></i> Price (VND)</label>
                     <input type="number" id="productPrice" placeholder="Enter price" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> Image URL</label>
+                    <input type="url" id="productImageUrl" placeholder="Enter image URL (optional)" class="form-input">
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-list"></i> Category</label>

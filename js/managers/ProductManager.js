@@ -22,6 +22,7 @@ export class ProductManager {
         }
     }
 
+    // Fixed: Reordered parameters to match expected signature
     createProduct(name, description, price, type, specificData, sessionToken, imageUrl = null) {
         if (!this.userManager.isAdmin(sessionToken)) {
             throw new AuthorizationException("Only admin can create products");
@@ -30,7 +31,7 @@ export class ProductManager {
         this.validateProductInput(name, description, price);
 
         // Generate default image URL if not provided
-        const productImageUrl = imageUrl || `https://via.placeholder.com/300x200/8b4513/ffffff?text=${encodeURIComponent(name)}`;
+        const productImageUrl = imageUrl || this.getDefaultImageUrl(name, type);
 
         let product;
         if (type === ProductType.DRINK) {
@@ -55,6 +56,16 @@ export class ProductManager {
         this.products.set(product.id, product);
         console.log(`Product created: ${product.name} with ID: ${product.id}`);
         return product;
+    }
+
+    // Helper method to generate default images based on product type
+    getDefaultImageUrl(name, type) {
+        const encodedName = encodeURIComponent(name);
+        if (type === ProductType.DRINK) {
+            return `https://via.placeholder.com/300x200/8B4513/FFFFFF?text=☕+${encodedName}`;
+        } else {
+            return `https://via.placeholder.com/300x200/D2691E/FFFFFF?text=🍽️+${encodedName}`;
+        }
     }
 
     updateProduct(productId, updates, sessionToken) {
@@ -96,6 +107,10 @@ export class ProductManager {
         const availableProducts = Array.from(this.products.values()).filter(p => p.isAvailable);
         console.log(`Retrieved ${availableProducts.length} available products`);
         return availableProducts;
+    }
+
+    getProductsByType(type) {
+        return this.getAllProducts().filter(product => product.type === type);
     }
 
     getProductById(productId) {

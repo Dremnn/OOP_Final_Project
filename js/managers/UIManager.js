@@ -1,4 +1,4 @@
-// managers/UIManager.js - Fixed version
+// managers/UIManager.js - Enhanced version with image support
 import { ProductType, OrderType, OrderStatus } from '../constants.js';
 import { Admin } from '../classes/Admin.js';
 
@@ -6,6 +6,7 @@ export class UIManager {
     constructor(app) {
         this.app = app;
         this.currentEditingProduct = null;
+        this.currentFilter = 'ALL'; // Track current filter
     }
 
     switchAuthTab(tab) {
@@ -119,7 +120,22 @@ export class UIManager {
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
         
+        // Reset filter
+        this.currentFilter = 'ALL';
+        
         this.showAlert('You have been logged out successfully', 'success');
+    }
+
+    // New filter function
+    filterProducts(type) {
+        this.currentFilter = type;
+        this.loadProducts();
+        
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`.filter-btn[data-type="${type}"]`).classList.add('active');
     }
 
     loadProducts() {
@@ -131,7 +147,13 @@ export class UIManager {
         }
         
         try {
-            const products = this.app.productManager.getAllProducts();
+            let products = this.app.productManager.getAllProducts();
+            
+            // Apply filter
+            if (this.currentFilter !== 'ALL') {
+                products = products.filter(product => product.type === this.currentFilter);
+            }
+            
             console.log('Found products:', products.length);
             
             const isAdmin = this.app.userManager.isAdmin(this.app.currentSession);
@@ -139,11 +161,14 @@ export class UIManager {
             productsGrid.innerHTML = '';
             
             if (products.length === 0) {
+                const filterText = this.currentFilter === 'ALL' ? 'products' : 
+                    (this.currentFilter === ProductType.DRINK ? 'drinks' : 'food items');
                 productsGrid.innerHTML = `
                     <div class="no-products">
-                        <i class="fas fa-coffee" style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
-                        <h3>No products available</h3>
-                        <p>Check back soon for our amazing coffee selection!</p>
+                        <i class="fas fa-${this.currentFilter === ProductType.DRINK ? 'coffee' : 'utensils'}" 
+                           style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
+                        <h3>No ${filterText} available</h3>
+                        <p>Check back soon for our amazing ${filterText}!</p>
                     </div>
                 `;
                 return;
@@ -180,37 +205,43 @@ export class UIManager {
                 }
                 
                 productCard.innerHTML = `
-                    <div class="product-header">
-                        <div class="product-type-icon">${typeIcon}</div>
-                        <h4>${product.name}</h4>
+                    <div class="product-image">
+                        <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
+                             onerror="this.src='https://via.placeholder.com/300x200/8B4513/FFFFFF?text=${encodeURIComponent(product.name)}'">
+                        <div class="product-type-badge">${typeIcon}</div>
                     </div>
-                    <p class="product-description">${product.description}</p>
-                    ${additionalInfo}
-                    <div class="product-price">${this.formatPrice(product.price)}</div>
-                    <div class="product-actions">
-                        ${!isAdmin ? `
-                            <div class="quantity-selector">
-                                <button class="quantity-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value || 1) - 1)">
-                                    <i class="fas fa-minus"></i>
+                    <div class="product-content">
+                        <div class="product-header">
+                            <h4>${product.name}</h4>
+                        </div>
+                        <p class="product-description">${product.description}</p>
+                        ${additionalInfo}
+                        <div class="product-price">${this.formatPrice(product.price)}</div>
+                        <div class="product-actions">
+                            ${!isAdmin ? `
+                                <div class="quantity-selector">
+                                    <button class="quantity-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value || 1) - 1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" value="1" min="1" max="10" class="quantity-input" id="qty_${product.id}">
+                                    <button class="quantity-btn" onclick="this.previousElementSibling.value = Math.min(10, parseInt(this.previousElementSibling.value || 1) + 1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCart('${product.id}', parseInt(document.getElementById('qty_${product.id}').value || 1))">
+                                    <i class="fas fa-cart-plus"></i> Add to Cart
                                 </button>
-                                <input type="number" value="1" min="1" max="10" class="quantity-input" id="qty_${product.id}">
-                                <button class="quantity-btn" onclick="this.previousElementSibling.value = Math.min(10, parseInt(this.previousElementSibling.value || 1) + 1)">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCart('${product.id}', parseInt(document.getElementById('qty_${product.id}').value || 1))">
-                                <i class="fas fa-cart-plus"></i> Add to Cart
-                            </button>
-                        ` : `
-                            <div class="admin-actions">
-                                <button class="btn btn-edit" onclick="window.uiManager.editProduct('${product.id}')">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="btn btn-danger btn-delete" onclick="window.uiManager.deleteProduct('${product.id}')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        `}
+                            ` : `
+                                <div class="admin-actions">
+                                    <button class="btn btn-edit" onclick="window.uiManager.editProduct('${product.id}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-danger btn-delete" onclick="window.uiManager.deleteProduct('${product.id}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `}
+                        </div>
                     </div>
                 `;
                 
@@ -280,6 +311,10 @@ export class UIManager {
                 const cartItem = document.createElement('div');
                 cartItem.className = 'cart-item';
                 cartItem.innerHTML = `
+                    <div class="cart-item-image">
+                        <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
+                             onerror="this.src='https://via.placeholder.com/60x60/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
+                    </div>
                     <div class="cart-item-info">
                         <h5>${product.name}</h5>
                         <p class="item-price">
@@ -435,6 +470,7 @@ export class UIManager {
                 document.getElementById('productDescription').value = product.description;
                 document.getElementById('productPrice').value = product.price;
                 document.getElementById('productType').value = product.type;
+                document.getElementById('productImageUrl').value = product.imageUrl || product.imageURL || '';
                 
                 if (product.type === ProductType.DRINK) {
                     document.getElementById('productSize').value = product.size;
@@ -451,6 +487,7 @@ export class UIManager {
             document.getElementById('productDescription').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('productType').value = 'DRINK';
+            document.getElementById('productImageUrl').value = '';
             document.getElementById('productSize').value = 'M';
             document.getElementById('productIsHot').checked = false;
             document.getElementById('productIsVegetarian').checked = false;
@@ -484,6 +521,7 @@ export class UIManager {
         const description = document.getElementById('productDescription').value;
         const price = parseFloat(document.getElementById('productPrice').value);
         const type = document.getElementById('productType').value;
+        const imageUrl = document.getElementById('productImageUrl').value;
         
         if (!name || !description || !price || price <= 0) {
             this.showAlert('Please fill in all required fields with valid values');
@@ -501,12 +539,11 @@ export class UIManager {
         try {
             if (this.currentEditingProduct) {
                 const updates = { name, description, price, ...specificData };
+                if (imageUrl) updates.imageUrl = imageUrl;
                 this.app.productManager.updateProduct(this.currentEditingProduct, updates, this.app.currentSession);
                 this.showAlert('Product updated successfully!', 'success');
             } else {
-                // For new products, we need to provide imageUrl (using placeholder for now)
-                const imageUrl = `https://via.placeholder.com/300x200?text=${encodeURIComponent(name)}`;
-                this.app.productManager.createProduct(name, description, price, imageUrl, type, specificData, this.app.currentSession);
+                this.app.productManager.createProduct(name, description, price, type, specificData, this.app.currentSession, imageUrl);
                 this.showAlert('Product created successfully!', 'success');
             }
             

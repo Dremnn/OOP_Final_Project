@@ -1,4 +1,4 @@
-// app.js
+// app.js - Fixed version
 import { UserManager } from './managers/UserManager.js';
 import { ProductManager } from './managers/ProductManager.js';
 import { CartManager } from './managers/CartManager.js';
@@ -22,41 +22,55 @@ export class CoffeeShopApplication {
             this.userManager.registerUser("admin", "admin123", "0123456789", UserRole.ADMIN);
             const adminToken = this.userManager.login("admin", "admin123");
             
-            // Add some sample products - updated to match ProductManager.createProduct signature
+            // Add sample products with correct parameter order: name, description, price, type, specificData, sessionToken, imageUrl
             this.productManager.createProduct(
                 "Cappuccino", 
-                "Rich coffee with steamed milk", 
+                "Rich coffee with steamed milk foam", 
                 45000, 
                 ProductType.DRINK, 
                 {size: "M", isHot: true}, 
-                adminToken
+                adminToken,
+                "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=300&h=200&fit=crop"
             );
             
             this.productManager.createProduct(
                 "Espresso", 
-                "Strong black coffee", 
+                "Strong black coffee shot", 
                 35000, 
                 ProductType.DRINK, 
                 {size: "S", isHot: true}, 
-                adminToken
+                adminToken,
+                "https://images.unsplash.com/photo-1510707577316-7e367ae3ba67?w=300&h=200&fit=crop"
             );
             
             this.productManager.createProduct(
                 "Iced Latte", 
-                "Smooth coffee with cold milk", 
+                "Smooth coffee with cold milk and ice", 
                 50000, 
                 ProductType.DRINK, 
                 {size: "L", isHot: false}, 
-                adminToken
+                adminToken,
+                "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=300&h=200&fit=crop"
+            );
+
+            this.productManager.createProduct(
+                "Vietnamese Drip Coffee", 
+                "Traditional Vietnamese coffee with condensed milk", 
+                40000, 
+                ProductType.DRINK, 
+                {size: "M", isHot: true}, 
+                adminToken,
+                "https://images.unsplash.com/photo-1497515114629-f71d768fd07c?w=300&h=200&fit=crop"
             );
             
             this.productManager.createProduct(
                 "Croissant", 
-                "Buttery pastry", 
+                "Buttery and flaky French pastry", 
                 25000, 
                 ProductType.FOOD, 
-                {isVegetarian: false}, 
-                adminToken
+                {isVegetarian: true}, 
+                adminToken,
+                "https://images.unsplash.com/photo-1555507036-ab794f77665a?w=300&h=200&fit=crop"
             );
             
             this.productManager.createProduct(
@@ -65,7 +79,28 @@ export class CoffeeShopApplication {
                 35000, 
                 ProductType.FOOD, 
                 {isVegetarian: true}, 
-                adminToken
+                adminToken,
+                "https://images.unsplash.com/photo-1553909489-cd47e0ef937f?w=300&h=200&fit=crop"
+            );
+
+            this.productManager.createProduct(
+                "Chicken Banh Mi", 
+                "Vietnamese baguette with grilled chicken", 
+                45000, 
+                ProductType.FOOD, 
+                {isVegetarian: false}, 
+                adminToken,
+                "https://images.unsplash.com/photo-1558030006-450675393462?w=300&h=200&fit=crop"
+            );
+
+            this.productManager.createProduct(
+                "Chocolate Muffin", 
+                "Rich chocolate chip muffin", 
+                30000, 
+                ProductType.FOOD, 
+                {isVegetarian: true}, 
+                adminToken,
+                "https://images.unsplash.com/photo-1587668178277-295251f900ce?w=300&h=200&fit=crop"
             );
 
             // Logout admin after initialization
@@ -90,9 +125,9 @@ export class CoffeeShopApplication {
         if (authAlert) {
             authAlert.innerHTML = `
                 <div class="alert alert-success">
-                    <strong>Demo Accounts:</strong><br>
-                    Admin: username "admin", password "admin123"<br>
-                    Or register as a new customer
+                    <strong>🎯 Demo Accounts:</strong><br>
+                    <strong>Admin:</strong> username "admin", password "admin123"<br>
+                    <strong>Customer:</strong> Register as a new customer to start shopping
                 </div>
             `;
         }
@@ -192,6 +227,7 @@ window.openCheckoutModal = () => app.uiManager.openCheckoutModal();
 window.closeCheckoutModal = () => app.uiManager.closeCheckoutModal();
 window.toggleOrderFields = () => app.uiManager.toggleOrderFields();
 window.placeOrder = () => app.uiManager.placeOrder();
+window.filterProducts = (type) => app.uiManager.filterProducts(type);
 
 // Initialize application when page loads
 window.addEventListener('DOMContentLoaded', () => {
