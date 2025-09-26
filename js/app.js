@@ -22,7 +22,7 @@ export class CoffeeShopApplication {
             this.userManager.registerUser("admin", "admin123", "0123456789", UserRole.ADMIN);
             const adminToken = this.userManager.login("admin", "admin123");
             
-            // Add some sample products
+            // Add some sample products - updated to match ProductManager.createProduct signature
             this.productManager.createProduct(
                 "Cappuccino", 
                 "Rich coffee with steamed milk", 
@@ -174,7 +174,7 @@ const app = new CoffeeShopApplication();
 window.app = app;
 window.uiManager = app.getUIManager();
 
-// Global UI functions that will be called from HTML
+// Global UI functions that will be called from HTML - updated to match UIManager methods
 window.switchAuthTab = (tab) => app.uiManager.switchAuthTab(tab);
 window.login = () => app.uiManager.login();
 window.register = () => app.uiManager.register();
