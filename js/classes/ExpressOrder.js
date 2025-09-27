@@ -2,9 +2,9 @@ import { Order } from './Order.js';
 import { OrderType } from '../constants.js';
 
 export class ExpressOrder extends Order {
-    constructor(customerId, items, pickupLocation) {
+    constructor(customerId, items, deliveryAddress) {
         super(customerId, items, OrderType.EXPRESS_ORDER);
-        this.pickupLocation = pickupLocation;
+        this.deliveryAddress = deliveryAddress; 
         this.isPriorityOrder = true;
     }
 

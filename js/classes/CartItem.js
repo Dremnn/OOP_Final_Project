@@ -8,7 +8,6 @@ export class CartItem {
         this.size = size; // ADD: Default size is Medium
         this.baseTotalPrice = quantity * unitPrice;
         this.totalPrice = this.calculateTotalWithSize();
-        this.customizations = {};
         this.addedAt = new Date();
     }
 

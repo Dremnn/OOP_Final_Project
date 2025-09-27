@@ -25,7 +25,6 @@ export class CoffeeShopApplication {
             // Add sample products with correct parameter order: name, description, price, type, specificData, sessionToken, imageUrl
             this.productManager.createProduct(
                 "Cappuccino", 
-                "Rich coffee with steamed milk foam", 
                 45000, 
                 ProductType.DRINK, 
                 {size: "M", isHot: true}, 
@@ -35,7 +34,6 @@ export class CoffeeShopApplication {
             
             this.productManager.createProduct(
                 "Espresso", 
-                "Strong black coffee shot", 
                 35000, 
                 ProductType.DRINK, 
                 {size: "S", isHot: true}, 
@@ -45,7 +43,6 @@ export class CoffeeShopApplication {
             
             this.productManager.createProduct(
                 "Iced Latte", 
-                "Smooth coffee with cold milk and ice", 
                 50000, 
                 ProductType.DRINK, 
                 {size: "L", isHot: false}, 
@@ -55,7 +52,6 @@ export class CoffeeShopApplication {
 
             this.productManager.createProduct(
                 "Vietnamese Drip Coffee", 
-                "Traditional Vietnamese coffee with condensed milk", 
                 40000, 
                 ProductType.DRINK, 
                 {size: "M", isHot: true}, 
@@ -65,7 +61,6 @@ export class CoffeeShopApplication {
             
             this.productManager.createProduct(
                 "Croissant", 
-                "Buttery and flaky French pastry", 
                 25000, 
                 ProductType.FOOD, 
                 {isVegetarian: true}, 
@@ -75,7 +70,6 @@ export class CoffeeShopApplication {
             
             this.productManager.createProduct(
                 "Veggie Sandwich", 
-                "Fresh vegetables in whole grain bread", 
                 35000, 
                 ProductType.FOOD, 
                 {isVegetarian: true}, 
@@ -85,7 +79,6 @@ export class CoffeeShopApplication {
 
             this.productManager.createProduct(
                 "Chicken Banh Mi", 
-                "Vietnamese baguette with grilled chicken", 
                 45000, 
                 ProductType.FOOD, 
                 {isVegetarian: false}, 
@@ -94,8 +87,7 @@ export class CoffeeShopApplication {
             );
 
             this.productManager.createProduct(
-                "Chocolate Muffin", 
-                "Rich chocolate chip muffin", 
+                "Chocolate Muffin",  
                 30000, 
                 ProductType.FOOD, 
                 {isVegetarian: true}, 
@@ -225,7 +217,6 @@ window.editProduct = (productId) => app.uiManager.editProduct(productId);
 window.deleteProduct = (productId) => app.uiManager.deleteProduct(productId);
 window.openCheckoutModal = () => app.uiManager.openCheckoutModal();
 window.closeCheckoutModal = () => app.uiManager.closeCheckoutModal();
-window.toggleOrderFields = () => app.uiManager.toggleOrderFields();
 window.placeOrder = () => app.uiManager.placeOrder();
 window.filterProducts = (type) => app.uiManager.filterProducts(type);
 

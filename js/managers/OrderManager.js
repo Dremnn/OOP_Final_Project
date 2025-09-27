@@ -29,7 +29,7 @@ export class OrderManager {
         if (orderType === OrderType.REGULAR_ORDER) {
             order = new RegularOrder(user.id, cartItems, orderData.deliveryAddress);
         } else {
-            order = new ExpressOrder(user.id, cartItems, orderData.pickupLocation);
+            order = new ExpressOrder(user.id, cartItems, orderData.deliveryAddress);
         }
 
         this.orders.set(order.id, order);

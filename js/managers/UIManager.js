@@ -528,9 +528,7 @@ export class UIManager {
                 
                 const statusClass = `status-${order.status.toLowerCase()}`;
                 const orderTypeText = order.orderType === OrderType.REGULAR_ORDER ? 'Home Delivery' : 'Store Pickup';
-                const addressInfo = order.orderType === OrderType.REGULAR_ORDER ? 
-                    `<i class="fas fa-map-marker-alt"></i> ${order.deliveryAddress}` : 
-                    `<i class="fas fa-store"></i> ${order.pickupLocation}`;
+                const addressInfo = `<i class="fas fa-map-marker-alt"></i> ${order.deliveryAddress}`;
                 
                 orderDiv.innerHTML = `
                     <div class="order-info">
@@ -595,7 +593,6 @@ export class UIManager {
             const product = this.app.productManager.getProductById(productId);
             if (product) {
                 document.getElementById('productName').value = product.name;
-                document.getElementById('productDescription').value = product.description;
                 document.getElementById('productPrice').value = product.price;
                 document.getElementById('productType').value = product.type;
                 document.getElementById('productImageUrl').value = product.imageUrl || product.imageURL || '';
@@ -612,7 +609,6 @@ export class UIManager {
         } else {
             // Clear form for new product
             document.getElementById('productName').value = '';
-            document.getElementById('productDescription').value = '';
             document.getElementById('productPrice').value = '';
             document.getElementById('productType').value = 'DRINK';
             document.getElementById('productImageUrl').value = '';
@@ -646,12 +642,11 @@ export class UIManager {
 
     saveProduct() {
         const name = document.getElementById('productName').value;
-        const description = document.getElementById('productDescription').value;
         const price = parseFloat(document.getElementById('productPrice').value);
         const type = document.getElementById('productType').value;
         const imageUrl = document.getElementById('productImageUrl').value;
         
-        if (!name || !description || !price || price <= 0) {
+        if (!name || !price || price <= 0) {
             this.showAlert('Please fill in all required fields with valid values');
             return;
         }
@@ -666,12 +661,12 @@ export class UIManager {
         
         try {
             if (this.currentEditingProduct) {
-                const updates = { name, description, price, ...specificData };
+                const updates = { name, price, ...specificData };
                 if (imageUrl) updates.imageUrl = imageUrl;
                 this.app.productManager.updateProduct(this.currentEditingProduct, updates, this.app.currentSession);
                 this.showAlert('Product updated successfully!', 'success');
             } else {
-                this.app.productManager.createProduct(name, description, price, type, specificData, this.app.currentSession, imageUrl);
+                this.app.productManager.createProduct(name, price, type, specificData, this.app.currentSession, imageUrl);
                 this.showAlert('Product created successfully!', 'success');
             }
             
@@ -781,26 +776,11 @@ export class UIManager {
         document.getElementById('orderType').value = 'REGULAR_ORDER';
         document.getElementById('deliveryAddress').value = '';
         document.getElementById('pickupLocation').value = '';
-        this.toggleOrderFields();
         this.loadCheckoutCartItems(); 
     }
 
     closeCheckoutModal() {
         document.getElementById('checkoutModal').style.display = 'none';
-    }
-
-    toggleOrderFields() {
-        const orderType = document.getElementById('orderType').value;
-        const regularFields = document.getElementById('regularOrderFields');
-        const expressFields = document.getElementById('expressOrderFields');
-        
-        if (orderType === OrderType.REGULAR_ORDER) {
-            regularFields.classList.remove('hidden');
-            expressFields.classList.add('hidden');
-        } else {
-            regularFields.classList.add('hidden');
-            expressFields.classList.remove('hidden');
-        }
     }
 
     updateCheckoutItemSize(itemId, newSize) {
@@ -813,23 +793,14 @@ export class UIManager {
         }
     }
 
-    // Method 4: REPLACE placeOrder method
     placeOrder() {
         const orderType = document.getElementById('orderType').value;
         const orderData = {};
         
-        if (orderType === OrderType.REGULAR_ORDER) {
-            orderData.deliveryAddress = document.getElementById('deliveryAddress').value;
-            if (!orderData.deliveryAddress.trim()) {
-                this.showAlert('Please enter a delivery address');
-                return;
-            }
-        } else {
-            orderData.pickupLocation = document.getElementById('pickupLocation').value;
-            if (!orderData.pickupLocation.trim()) {
-                this.showAlert('Please enter a pickup location');
-                return;
-            }
+        orderData.deliveryAddress = document.getElementById('deliveryAddress').value;
+        if (!orderData.deliveryAddress.trim()) {
+            this.showAlert('Please enter a delivery address');
+            return;
         }
         
         try {

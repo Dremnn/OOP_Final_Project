@@ -10,34 +10,28 @@ export class ProductManager {
         this.userManager = userManager;
     }
 
-    validateProductInput(name, description, price) {
+    validateProductInput(name, price) {
         if (!name || name.trim() === '') {
             throw new ValidationException("Product name is required");
-        }
-        if (!description || description.trim() === '') {
-            throw new ValidationException("Product description is required");
         }
         if (!price || price <= 0) {
             throw new ValidationException("Product price must be positive");
         }
     }
 
-    // Fixed: Reordered parameters to match expected signature
-    createProduct(name, description, price, type, specificData, sessionToken, imageUrl = null) {
+    createProduct(name, price, type, specificData, sessionToken, imageUrl = null) {
         if (!this.userManager.isAdmin(sessionToken)) {
             throw new AuthorizationException("Only admin can create products");
         }
         
-        this.validateProductInput(name, description, price);
+        this.validateProductInput(name, price);
 
-        // Generate default image URL if not provided
         const productImageUrl = imageUrl || this.getDefaultImageUrl(name, type);
 
         let product;
         if (type === ProductType.DRINK) {
             product = new Drink(
                 name, 
-                description, 
                 price, 
                 productImageUrl, 
                 specificData.size || 'M', 
@@ -46,7 +40,6 @@ export class ProductManager {
         } else {
             product = new Food(
                 name, 
-                description, 
                 price, 
                 productImageUrl, 
                 specificData.isVegetarian !== undefined ? specificData.isVegetarian : false
