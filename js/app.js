@@ -125,9 +125,9 @@ export class CoffeeShopApplication {
         if (authAlert) {
             authAlert.innerHTML = `
                 <div class="alert alert-success">
-                    <strong>🎯 Demo Accounts:</strong><br>
+                    <strong>🎯 Demo Account:</strong><br>
                     <strong>Admin:</strong> username "admin", password "admin123"<br>
-                    <strong>Customer:</strong> Register as a new customer to start shopping
+                    <strong>Customer:</strong> Register now to start shopping! (Default role: Customer)
                 </div>
             `;
         }
@@ -214,7 +214,7 @@ window.switchAuthTab = (tab) => app.uiManager.switchAuthTab(tab);
 window.login = () => app.uiManager.login();
 window.register = () => app.uiManager.register();
 window.logout = () => app.uiManager.logout();
-window.addToCart = (productId, quantity) => app.uiManager.addToCart(productId, quantity);
+window.addToCart = (productId, quantity, size = 'M') => app.uiManager.addToCart(productId, quantity, size);
 window.updateCartQuantity = (itemId, newQuantity) => app.uiManager.updateCartQuantity(itemId, newQuantity);
 window.updateOrderStatus = (orderId, newStatus) => app.uiManager.updateOrderStatus(orderId, newStatus);
 window.openProductModal = (productId) => app.uiManager.openProductModal(productId);
@@ -228,6 +228,10 @@ window.closeCheckoutModal = () => app.uiManager.closeCheckoutModal();
 window.toggleOrderFields = () => app.uiManager.toggleOrderFields();
 window.placeOrder = () => app.uiManager.placeOrder();
 window.filterProducts = (type) => app.uiManager.filterProducts(type);
+
+// ADD these new global functions:
+window.addToCartWithSize = (productId) => app.uiManager.addToCartWithSize(productId);
+window.updateCheckoutItemSize = (itemId, newSize) => app.uiManager.updateCheckoutItemSize(itemId, newSize);
 
 // Initialize application when page loads
 window.addEventListener('DOMContentLoaded', () => {

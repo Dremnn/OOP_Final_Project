@@ -2,6 +2,7 @@
 import { AuthorizationException, ValidationException } from '../exceptions.js';
 import { Customer } from '../classes/Customer.js';
 import { CartItem } from '../classes/CartItem.js';
+import { ProductType } from '../constants.js';
 
 export class CartManager {
     constructor(userManager, productManager) {
@@ -10,7 +11,7 @@ export class CartManager {
         this.productManager = productManager;
     }
 
-    addToCart(productId, quantity, sessionToken) {
+    addToCart(productId, quantity, sessionToken, size = 'M') {
         const user = this.userManager.getCurrentUser(sessionToken);
         if (!(user instanceof Customer)) {
             throw new AuthorizationException("Only customers can add items to cart");
@@ -26,7 +27,9 @@ export class CartManager {
             this.userCarts.set(customerId, []);
         }
 
-        const cartItem = new CartItem(productId, customerId, quantity, product.price);
+        // For drinks, use the selected size; for food, default to 'M' but doesn't affect price
+        const itemSize = product.type === ProductType.DRINK ? size : 'M';
+        const cartItem = new CartItem(productId, customerId, quantity, product.price, itemSize);
         this.userCarts.get(customerId).push(cartItem);
         return cartItem;
     }
@@ -50,6 +53,20 @@ export class CartManager {
                 item.updateQuantity(newQuantity);
             }
         }
+    }
+
+    // ADD: New method to update cart item size
+    updateCartItemSize(itemId, newSize, sessionToken) {
+        const cart = this.getCart(sessionToken);
+        const item = cart.find(item => item.id === itemId);
+        if (item) {
+            const product = this.productManager.getProductById(item.productId);
+            // Only allow size change for drinks
+            if (product && product.type === ProductType.DRINK) {
+                item.updateSize(newSize);
+            }
+        }
+        return item;
     }
 
     clearCart(customerId) {

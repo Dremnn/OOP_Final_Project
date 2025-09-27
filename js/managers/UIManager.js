@@ -1,5 +1,5 @@
 // managers/UIManager.js - Enhanced version with image support
-import { ProductType, OrderType, OrderStatus } from '../constants.js';
+import { ProductType, OrderType, OrderStatus, SizeMultipliers } from '../constants.js';
 import { Admin } from '../classes/Admin.js';
 
 export class UIManager {
@@ -85,7 +85,8 @@ export class UIManager {
         const username = document.getElementById('regUsername').value;
         const password = document.getElementById('regPassword').value;
         const phoneNumber = document.getElementById('regPhone').value;
-        const role = document.getElementById('regRole').value;
+        // REMOVED: const role = document.getElementById('regRole').value;
+        const role = 'CUSTOMER'; // DEFAULT: Always create as customer
         
         if (!username || !password || !phoneNumber) {
             this.showAlert('Please fill in all fields');
@@ -101,7 +102,7 @@ export class UIManager {
             document.getElementById('regUsername').value = '';
             document.getElementById('regPassword').value = '';
             document.getElementById('regPhone').value = '';
-            document.getElementById('regRole').value = 'CUSTOMER';
+            // REMOVED: document.getElementById('regRole').value = 'CUSTOMER';
         } catch (error) {
             this.showAlert(error.message);
         }
@@ -166,7 +167,7 @@ export class UIManager {
                 productsGrid.innerHTML = `
                     <div class="no-products">
                         <i class="fas fa-${this.currentFilter === ProductType.DRINK ? 'coffee' : 'utensils'}" 
-                           style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
+                        style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
                         <h3>No ${filterText} available</h3>
                         <p>Check back soon for our amazing ${filterText}!</p>
                     </div>
@@ -186,7 +187,6 @@ export class UIManager {
                 if (product.type === ProductType.DRINK) {
                     additionalInfo = `
                         <div class="product-specs">
-                            <span class="spec-badge"><i class="fas fa-expand-arrows-alt"></i> ${product.size}</span>
                             <span class="spec-badge ${product.isHot ? 'hot' : 'cold'}">
                                 <i class="fas fa-${product.isHot ? 'fire' : 'snowflake'}"></i> 
                                 ${product.isHot ? 'Hot' : 'Cold'}
@@ -203,11 +203,27 @@ export class UIManager {
                         </div>
                     `;
                 }
+
+                // Size selector for drinks (customer view only)
+                const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? `
+                    <div class="product-size-selector">
+                        <label><i class="fas fa-expand-arrows-alt"></i> Size:</label>
+                        <div class="size-options">
+                            ${Object.entries(SizeMultipliers).map(([size, info]) => `
+                                <input type="radio" name="size_${product.id}" value="${size}" 
+                                    id="size_${product.id}_${size}" ${size === 'M' ? 'checked' : ''}>
+                                <label for="size_${product.id}_${size}" class="size-option-label">
+                                    ${size} <span class="size-price">${this.formatPrice(product.price * info.multiplier)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '';
                 
                 productCard.innerHTML = `
                     <div class="product-image">
                         <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
-                             onerror="this.src='https://via.placeholder.com/300x200/8B4513/FFFFFF?text=${encodeURIComponent(product.name)}'">
+                            onerror="this.src='https://via.placeholder.com/300x200/8B4513/FFFFFF?text=${encodeURIComponent(product.name)}'">
                         <div class="product-type-badge">${typeIcon}</div>
                     </div>
                     <div class="product-content">
@@ -216,7 +232,8 @@ export class UIManager {
                         </div>
                         <p class="product-description">${product.description}</p>
                         ${additionalInfo}
-                        <div class="product-price">${this.formatPrice(product.price)}</div>
+                        <div class="product-price-base">Price: ${this.formatPrice(product.price)}</div>
+                        ${sizeSelector}
                         <div class="product-actions">
                             ${!isAdmin ? `
                                 <div class="quantity-selector">
@@ -228,7 +245,7 @@ export class UIManager {
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
-                                <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCart('${product.id}', parseInt(document.getElementById('qty_${product.id}').value || 1))">
+                                <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCartWithSize('${product.id}')">
                                     <i class="fas fa-cart-plus"></i> Add to Cart
                                 </button>
                             ` : `
@@ -256,20 +273,62 @@ export class UIManager {
         }
     }
 
-    addToCart(productId, quantity) {
+    addToCart(productId, quantity, size = 'M') {
         if (!quantity || quantity < 1) {
             this.showAlert('Please select a valid quantity');
             return;
         }
         
         try {
-            this.app.cartManager.addToCart(productId, quantity, this.app.currentSession);
+            this.app.cartManager.addToCart(productId, quantity, this.app.currentSession, size);
             this.loadCart();
             this.showAlert(`Added ${quantity} item(s) to your cart!`, 'success');
             
             // Reset quantity input
             const qtyInput = document.getElementById(`qty_${productId}`);
             if (qtyInput) qtyInput.value = '1';
+        } catch (error) {
+            this.showAlert(error.message);
+        }
+    }
+
+    addToCartWithSize(productId) {
+        const quantity = parseInt(document.getElementById(`qty_${productId}`).value || 1);
+        
+        if (!quantity || quantity < 1) {
+            this.showAlert('Please select a valid quantity');
+            return;
+        }
+        
+        // Get selected size for drinks
+        const product = this.app.productManager.getProductById(productId);
+        let selectedSize = 'M'; // default
+        
+        if (product && product.type === ProductType.DRINK) {
+            const sizeRadios = document.querySelectorAll(`input[name="size_${productId}"]`);
+            for (let radio of sizeRadios) {
+                if (radio.checked) {
+                    selectedSize = radio.value;
+                    break;
+                }
+            }
+        }
+        
+        try {
+            this.app.cartManager.addToCart(productId, quantity, this.app.currentSession, selectedSize);
+            this.loadCart();
+            
+            const sizeText = product.type === ProductType.DRINK ? ` (Size: ${selectedSize})` : '';
+            this.showAlert(`Added ${quantity} item(s)${sizeText} to your cart!`, 'success');
+            
+            // Reset quantity input
+            const qtyInput = document.getElementById(`qty_${productId}`);
+            if (qtyInput) qtyInput.value = '1';
+            
+            // Reset size selection to Medium
+            const mediumRadio = document.getElementById(`size_${productId}_M`);
+            if (mediumRadio) mediumRadio.checked = true;
+            
         } catch (error) {
             this.showAlert(error.message);
         }
@@ -308,17 +367,22 @@ export class UIManager {
                 
                 total += item.totalPrice;
                 
+                // Size info for drinks
+                const sizeInfo = product.type === ProductType.DRINK ? 
+                    `<span class="item-size">Size: ${item.size} (${SizeMultipliers[item.size]?.label || 'Medium'})</span>` : '';
+                
                 const cartItem = document.createElement('div');
                 cartItem.className = 'cart-item';
                 cartItem.innerHTML = `
                     <div class="cart-item-image">
                         <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
-                             onerror="this.src='https://via.placeholder.com/60x60/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
+                            onerror="this.src='https://via.placeholder.com/60x60/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
                     </div>
                     <div class="cart-item-info">
                         <h5>${product.name}</h5>
+                        ${sizeInfo}
                         <p class="item-price">
-                            <i class="fas fa-tag"></i> ${this.formatPrice(item.unitPrice)} each
+                            <i class="fas fa-tag"></i> ${this.formatPrice(item.getUnitPriceWithSize())} each
                         </p>
                     </div>
                     <div class="cart-item-controls">
@@ -570,12 +634,86 @@ export class UIManager {
         }
     }
 
+    loadCheckoutCartItems() {
+    if (!this.app.currentSession || this.app.userManager.isAdmin(this.app.currentSession)) return;
+    
+    try {
+        const cartItems = this.app.cartManager.getCart(this.app.currentSession);
+        const checkoutCartItems = document.getElementById('checkoutCartItems');
+        
+        if (!checkoutCartItems) return;
+        
+        checkoutCartItems.innerHTML = '';
+        
+        if (cartItems.length === 0) {
+            checkoutCartItems.innerHTML = '<p style="text-align: center; color: #666;">No items in cart</p>';
+            return;
+        }
+        
+        cartItems.forEach(item => {
+            const product = this.app.productManager.getProductById(item.productId);
+            if (!product) return;
+            
+            const checkoutItem = document.createElement('div');
+            checkoutItem.className = 'checkout-item';
+            
+            // Size selector for drinks only
+            const sizeSelector = product.type === ProductType.DRINK ? `
+                <div class="size-selector">
+                    ${Object.entries(SizeMultipliers).map(([size, info]) => `
+                        <button class="size-option ${item.size === size ? 'active' : ''}" 
+                                onclick="window.uiManager.updateCheckoutItemSize('${item.id}', '${size}')">
+                            ${size}
+                        </button>
+                    `).join('')}
+                </div>
+                <div class="size-info">
+                    S: -20% | M: Normal | L: +30%
+                </div>
+            ` : '';
+            
+            checkoutItem.innerHTML = `
+                <div class="checkout-item-image">
+                    <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
+                         onerror="this.src='https://via.placeholder.com/50x50/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
+                </div>
+                <div class="checkout-item-info">
+                    <h6>${product.name}</h6>
+                    <p class="checkout-item-qty">Quantity: ${item.quantity}</p>
+                </div>
+                <div class="checkout-item-controls">
+                    ${sizeSelector}
+                    <div class="checkout-item-price">
+                        ${this.formatPrice(item.totalPrice)}
+                    </div>
+                </div>
+            `;
+            
+            checkoutCartItems.appendChild(checkoutItem);
+        });
+        
+    } catch (error) {
+        console.error('Error loading checkout cart items:', error);
+    }
+    }
+
+    updateCheckoutItemSize(itemId, newSize) {
+    try {
+        this.app.cartManager.updateCartItemSize(itemId, newSize, this.app.currentSession);
+        this.loadCheckoutCartItems(); // Reload checkout items
+        this.loadCart(); // Reload main cart display
+    } catch (error) {
+        this.showAlert(error.message);
+    }
+    }
+
     openCheckoutModal() {
         document.getElementById('checkoutModal').style.display = 'block';
         document.getElementById('orderType').value = 'REGULAR_ORDER';
         document.getElementById('deliveryAddress').value = '';
         document.getElementById('pickupLocation').value = '';
         this.toggleOrderFields();
+        this.loadCheckoutCartItems(); 
     }
 
     closeCheckoutModal() {
@@ -596,6 +734,17 @@ export class UIManager {
         }
     }
 
+    updateCheckoutItemSize(itemId, newSize) {
+        try {
+            this.app.cartManager.updateCartItemSize(itemId, newSize, this.app.currentSession);
+            this.loadCheckoutCartItems(); // Reload checkout items
+            this.loadCart(); // Reload main cart display
+        } catch (error) {
+            this.showAlert(error.message);
+        }
+    }
+
+    // Method 4: REPLACE placeOrder method
     placeOrder() {
         const orderType = document.getElementById('orderType').value;
         const orderData = {};
@@ -620,8 +769,9 @@ export class UIManager {
             this.loadCart();
             this.loadOrders();
             
-            const orderTypeText = orderType === OrderType.REGULAR_ORDER ? 'delivery' : 'pickup';
-            this.showAlert(`Order placed successfully! Your ${orderTypeText} order #${order.id.substr(-8)} will be ready in ~${order.getEstimatedPreparationTime()} minutes.`, 'success');
+            const orderTypeText = orderType === OrderType.REGULAR_ORDER ? 'regular' : 'express';
+            const deliveryFee = orderType === OrderType.REGULAR_ORDER ? '25,000' : '50,000';
+            this.showAlert(`Order placed successfully! Your ${orderTypeText} order #${order.id.substr(-8)} will be ready in ~${order.getEstimatedPreparationTime()} minutes. Delivery fee: ${deliveryFee} VND`, 'success');
         } catch (error) {
             this.showAlert(error.message);
         }

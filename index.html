@@ -46,7 +46,7 @@
                         <i class="fas fa-sign-in-alt"></i> Sign In
                     </button>
                     <button class="tab-button" onclick="switchAuthTab('register')">
-                        <i class="fas fa-user-plus"></i> Join Us
+                        <i class="fas fa-user-plus"></i> Create Account
                     </button>
                 </div>
 
@@ -79,13 +79,7 @@
                         <label><i class="fas fa-phone"></i> Phone Number</label>
                         <input type="tel" id="regPhone" placeholder="Your contact number" class="form-input">
                     </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-user-tag"></i> I am a</label>
-                        <select id="regRole" class="form-select">
-                            <option value="CUSTOMER"><i class="fas fa-user"></i> Coffee Lover</option>
-                            <option value="ADMIN"><i class="fas fa-crown"></i> Store Manager</option>
-                        </select>
-                    </div>
+                    <!-- REMOVED: Role selection dropdown -->
                     <button class="btn btn-success" onclick="register()">
                         <i class="fas fa-heart"></i> Join Highlands Family
                     </button>
@@ -251,10 +245,10 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label><i class="fas fa-truck"></i> Delivery Option</label>
+                    <label><i class="fas fa-truck"></i> Order Type</label>
                     <select id="orderType" onchange="toggleOrderFields()" class="form-select">
-                        <option value="REGULAR_ORDER">Home Delivery (30-45 mins)</option>
-                        <option value="EXPRESS_ORDER">Store Pickup (15-20 mins)</option>
+                        <option value="REGULAR_ORDER">Regular Order (30-45 mins) - 25,000 VND</option>
+                        <option value="EXPRESS_ORDER">Express Order (15-20 mins) - 50,000 VND</option>
                     </select>
                 </div>
                 
@@ -270,6 +264,12 @@
                         <label><i class="fas fa-store"></i> Pickup Location</label>
                         <input type="text" id="pickupLocation" placeholder="Choose pickup location" class="form-input">
                     </div>
+                </div>
+                
+                <!-- Cart Items with Size Selection -->
+                <div class="checkout-cart-items">
+                    <h4><i class="fas fa-shopping-cart"></i> Your Order Items</h4>
+                    <div id="checkoutCartItems"></div>
                 </div>
             </div>
             <div class="modal-footer">
