@@ -677,7 +677,7 @@ body::before {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 480px;
+    min-height: 380px;
 }
 
 .product-card::before {
@@ -744,7 +744,7 @@ body::before {
 }
 
 .product-content {
-    padding: 25px;
+    padding: 20px;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -756,8 +756,8 @@ body::before {
 
 .product-card h4 {
     color: #8b4513;
-    font-size: 1.3em;
-    margin-bottom: 12px;
+    font-size: 1.2em;
+    margin-bottom: 10px;
     font-weight: 600;
 }
 
@@ -771,7 +771,7 @@ body::before {
 .product-specs {
     display: flex;
     gap: 8px;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     flex-wrap: wrap;
 }
 
@@ -1556,6 +1556,58 @@ body::before {
         padding: 12px;
     }
 
+        .size-options-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        max-width: 90vw;
+    }
+    
+    .current-size-display {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        padding: 10px 40px 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        font-size: 0.9em;
+    }
+    
+    .size-change-btn {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #8b4513;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7em;
+        transition: all 0.3s ease;
+        z-index: 2;
+        box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3); /* Thêm shadow để nổi bật */
+    }
+
+    .size-label {
+        color: #654321;
+        font-weight: 500;
+        font-size: 0.9em;
+        flex: 1; /* Chiếm toàn bộ không gian còn lại */
+    }
+    
+    .size-price {
+        color: #8b4513;
+    }
+
 }
 
 @media (max-width: 480px) {
@@ -1822,19 +1874,143 @@ body::before {
     color: inherit;
 }
 
-.product-price-base {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: #666;
-    margin: 10px 0;
+.product-price-display {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #a0522d;
+    margin: 12px 0;
     text-align: center;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #f5deb3, #deb887);
+    padding: 12px 15px;
+    border-radius: 15px;
+    border: 2px solid rgba(139, 69, 19, 0.2);
+    transition: all 0.3s ease;
 }
 
 /* Update existing product-price to be less prominent when size selector is present */
 .product-card:has(.product-size-selector) .product-price {
     display: none;
+}
+
+.product-size-compact {
+    margin: 12px 0;
+    position: relative;
+}
+
+.current-size-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 10px 40px 10px 15px; /* Extra right padding for button */
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.current-size-display:hover {
+    border-color: #8b4513;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.1);
+}
+
+.size-label {
+    color: #654321;
+    font-weight: 500;
+    font-size: 0.9em;
+    flex: 1;
+}
+
+.size-label strong {
+    color: #8b4513;
+    font-size: 1.1em;
+}
+
+.size-price {
+    font-weight: 600;
+    color: #a0522d;
+    font-size: 0.95em;
+}
+
+.size-change-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #8b4513;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    transition: all 0.3s ease;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+}
+
+.size-change-btn:hover {
+    background: #654321;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+}
+
+.size-options-popup {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #8b4513;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 8px 25px rgba(139, 69, 19, 0.2);
+    z-index: 10;
+    margin-top: 5px;
+}
+
+.size-options-popup.hidden {
+    display: none;
+}
+
+.size-option-btn {
+    display: block;
+    width: 100%;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: left;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+.size-option-btn:last-child {
+    margin-bottom: 0;
+}
+
+.size-option-btn:hover {
+    border-color: #8b4513;
+    color: #8b4513;
+    transform: translateX(3px);
+}
+
+.size-option-btn.active {
+    background: linear-gradient(135deg, #8b4513, #654321);
+    color: white;
+    border-color: #8b4513;
+    box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+}
+
+.current-size-display .size-price {
+    display: none !important;
 }

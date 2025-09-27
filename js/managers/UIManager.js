@@ -206,15 +206,20 @@ export class UIManager {
 
                 // Size selector for drinks (customer view only)
                 const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? `
-                    <div class="product-size-selector">
-                        <label><i class="fas fa-expand-arrows-alt"></i> Size:</label>
-                        <div class="size-options">
+                    <div class="product-size-compact">
+                        <div class="current-size-display">
+                            <span class="size-label">Size: <strong id="current_size_${product.id}">M</strong></span>
+                            <span class="size-price" id="current_price_${product.id}">${this.formatPrice(product.price)}</span>
+                        </div>
+                        <button type="button" class="size-change-btn" onclick="window.uiManager.toggleSizeSelector('${product.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <div class="size-options-popup hidden" id="size_popup_${product.id}">
                             ${Object.entries(SizeMultipliers).map(([size, info]) => `
-                                <input type="radio" name="size_${product.id}" value="${size}" 
-                                    id="size_${product.id}_${size}" ${size === 'M' ? 'checked' : ''}>
-                                <label for="size_${product.id}_${size}" class="size-option-label">
-                                    ${size} <span class="size-price">${this.formatPrice(product.price * info.multiplier)}</span>
-                                </label>
+                                <button type="button" class="size-option-btn ${size === 'M' ? 'active' : ''}" 
+                                    onclick="window.uiManager.selectSize('${product.id}', '${size}', ${product.price * info.multiplier})">
+                                    ${size} - ${this.formatPrice(product.price * info.multiplier)}
+                                </button>
                             `).join('')}
                         </div>
                     </div>
@@ -230,9 +235,10 @@ export class UIManager {
                         <div class="product-header">
                             <h4>${product.name}</h4>
                         </div>
-                        <p class="product-description">${product.description}</p>
                         ${additionalInfo}
-                        <div class="product-price-base">Price: ${this.formatPrice(product.price)}</div>
+                        <div class="product-price-display" id="price_display_${product.id}">
+                            Price: ${this.formatPrice(product.price)}
+                        </div>
                         ${sizeSelector}
                         <div class="product-actions">
                             ${!isAdmin ? `
@@ -305,12 +311,10 @@ export class UIManager {
         let selectedSize = 'M'; // default
         
         if (product && product.type === ProductType.DRINK) {
-            const sizeRadios = document.querySelectorAll(`input[name="size_${productId}"]`);
-            for (let radio of sizeRadios) {
-                if (radio.checked) {
-                    selectedSize = radio.value;
-                    break;
-                }
+            // Lấy size từ data attribute hoặc từ hiển thị hiện tại
+            const currentSizeElement = document.getElementById(`current_size_${productId}`);
+            if (currentSizeElement) {
+                selectedSize = currentSizeElement.textContent.trim();
             }
         }
         
@@ -326,11 +330,71 @@ export class UIManager {
             if (qtyInput) qtyInput.value = '1';
             
             // Reset size selection to Medium
-            const mediumRadio = document.getElementById(`size_${productId}_M`);
-            if (mediumRadio) mediumRadio.checked = true;
+            this.selectSize(productId, 'M', product.price);
             
         } catch (error) {
             this.showAlert(error.message);
+        }
+    }
+
+    toggleSizeSelector(productId) {
+        const popup = document.getElementById(`size_popup_${productId}`);
+        if (popup) {
+            // Đóng tất cả popup khác trước
+            document.querySelectorAll('.size-options-popup').forEach(p => {
+                if (p.id !== `size_popup_${productId}`) {
+                    p.classList.add('hidden');
+                }
+            });
+            
+            // Toggle popup hiện tại
+            popup.classList.toggle('hidden');
+            
+            // Đóng popup khi click ra ngoài
+            if (!popup.classList.contains('hidden')) {
+                setTimeout(() => {
+                    const closeHandler = (e) => {
+                        if (!e.target.closest(`#size_popup_${productId}`) && 
+                            !e.target.closest('.size-change-btn')) {
+                            popup.classList.add('hidden');
+                            document.removeEventListener('click', closeHandler);
+                        }
+                    };
+                    document.addEventListener('click', closeHandler);
+                }, 10);
+            }
+        }
+    }
+
+    selectSize(productId, size, price) {
+        // Cập nhật size hiển thị
+        const currentSizeElement = document.getElementById(`current_size_${productId}`);
+        if (currentSizeElement) currentSizeElement.textContent = size;
+        
+        // CẬP NHẬT GIÁ CHÍNH CỦA PRODUCT
+        const priceDisplayElement = document.getElementById(`price_display_${productId}`);
+        if (priceDisplayElement) {
+            priceDisplayElement.textContent = `Price: ${this.formatPrice(price)}`;
+        }
+        
+        // Cập nhật active state cho buttons
+        const popup = document.getElementById(`size_popup_${productId}`);
+        if (popup) {
+            popup.querySelectorAll('.size-option-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            popup.querySelector(`[onclick*="'${size}'"]`).classList.add('active');
+            
+            // Đóng popup
+            popup.classList.add('hidden');
+        }
+        
+        // Lưu size đã chọn vào data attribute
+        const productCard = document.querySelector(`[data-product-id="${productId}"]`) || 
+                        popup?.closest('.product-card');
+        if (productCard) {
+            productCard.setAttribute('data-selected-size', size);
+            productCard.setAttribute('data-selected-price', price);
         }
     }
 
@@ -658,17 +722,22 @@ export class UIManager {
             checkoutItem.className = 'checkout-item';
             
             // Size selector for drinks only
-            const sizeSelector = product.type === ProductType.DRINK ? `
-                <div class="size-selector">
-                    ${Object.entries(SizeMultipliers).map(([size, info]) => `
-                        <button class="size-option ${item.size === size ? 'active' : ''}" 
-                                onclick="window.uiManager.updateCheckoutItemSize('${item.id}', '${size}')">
-                            ${size}
-                        </button>
-                    `).join('')}
-                </div>
-                <div class="size-info">
-                    S: -20% | M: Normal | L: +30%
+            const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? `
+                <div class="product-size-compact">
+                    <div class="current-size-display">
+                        <span class="size-label">Size: <strong id="current_size_${product.id}">M</strong></span>
+                    </div>
+                    <button type="button" class="size-change-btn" onclick="window.uiManager.toggleSizeSelector('${product.id}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <div class="size-options-popup hidden" id="size_popup_${product.id}">
+                        ${Object.entries(SizeMultipliers).map(([size, info]) => `
+                            <button type="button" class="size-option-btn ${size === 'M' ? 'active' : ''}" 
+                                onclick="window.uiManager.selectSize('${product.id}', '${size}', ${product.price * info.multiplier})">
+                                ${size} - ${this.formatPrice(product.price * info.multiplier)}
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
             ` : '';
             

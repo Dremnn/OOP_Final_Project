@@ -232,6 +232,8 @@ window.filterProducts = (type) => app.uiManager.filterProducts(type);
 // ADD these new global functions:
 window.addToCartWithSize = (productId) => app.uiManager.addToCartWithSize(productId);
 window.updateCheckoutItemSize = (itemId, newSize) => app.uiManager.updateCheckoutItemSize(itemId, newSize);
+window.toggleSizeSelector = (productId) => app.uiManager.toggleSizeSelector(productId);
+window.selectSize = (productId, size, price) => app.uiManager.selectSize(productId, size, price);
 
 // Initialize application when page loads
 window.addEventListener('DOMContentLoaded', () => {
