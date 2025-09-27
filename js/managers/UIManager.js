@@ -1,4 +1,4 @@
-// managers/UIManager.js - Enhanced version with image support
+// managers/UIManager.js - Optimized version
 import { ProductType, OrderType, OrderStatus, SizeMultipliers } from '../constants.js';
 import { Admin } from '../classes/Admin.js';
 
@@ -6,12 +6,32 @@ export class UIManager {
     constructor(app) {
         this.app = app;
         this.currentEditingProduct = null;
-        this.currentFilter = 'ALL'; // Track current filter
+        this.currentFilter = 'ALL';
+        
+        // Cache frequently used DOM elements
+        this.elements = {
+            authSection: null,
+            mainApp: null,
+            productsGrid: null,
+            cartItems: null,
+            cartTotal: null,
+            checkoutBtn: null,
+            ordersContainer: null,
+            alertContainer: null
+        };
+    }
+
+    // Cache DOM elements on first access
+    getElement(id) {
+        if (!this.elements[id]) {
+            this.elements[id] = document.getElementById(id);
+        }
+        return this.elements[id];
     }
 
     switchAuthTab(tab) {
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
+        const loginForm = this.getElement('loginForm');
+        const registerForm = this.getElement('registerForm');
         const buttons = document.querySelectorAll('.tab-button');
         
         buttons.forEach(btn => btn.classList.remove('active'));
@@ -28,20 +48,20 @@ export class UIManager {
     }
 
     showAlert(message, type = 'error') {
-        const alertContainer = document.getElementById('alertContainer');
+        const alertContainer = this.getElement('alertContainer');
         const alert = document.createElement('div');
+        const iconClass = type === 'error' ? 'exclamation-triangle' : 'check-circle';
+        
         alert.className = `alert alert-${type}`;
-        alert.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i> ${message}`;
+        alert.innerHTML = `<i class="fas fa-${iconClass}"></i> ${message}`;
         alertContainer.appendChild(alert);
         
-        setTimeout(() => {
-            alert.remove();
-        }, 5000);
+        setTimeout(() => alert.remove(), 5000);
     }
 
     login() {
-        const username = document.getElementById('loginUsername').value;
-        const password = document.getElementById('loginPassword').value;
+        const username = this.getElement('loginUsername').value;
+        const password = this.getElement('loginPassword').value;
         
         if (!username || !password) {
             this.showAlert('Please fill in all fields');
@@ -53,25 +73,21 @@ export class UIManager {
             this.app.currentSession = sessionToken;
             
             const user = this.app.userManager.getCurrentUser(sessionToken);
-            document.getElementById('userWelcome').textContent = `Welcome back, ${user.username}!`;
-            document.getElementById('userRole').textContent = user.role === 'ADMIN' ? 'Store Manager' : 'Coffee Lover';
-            document.getElementById('userRole').className = `role-badge status-${user.role.toLowerCase()}`;
+            this.getElement('userWelcome').textContent = `Welcome back, ${user.username}!`;
+            this.getElement('userRole').textContent = user.role === 'ADMIN' ? 'Store Manager' : 'Coffee Lover';
+            this.getElement('userRole').className = `role-badge status-${user.role.toLowerCase()}`;
             
-            document.getElementById('authSection').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
+            this.getElement('authSection').classList.add('hidden');
+            this.getElement('mainApp').classList.remove('hidden');
             
-            if (user instanceof Admin) {
-                document.getElementById('adminProductControls').classList.remove('hidden');
-                document.getElementById('cartSection').classList.add('hidden');
-            } else {
-                document.getElementById('adminProductControls').classList.add('hidden');
-                document.getElementById('cartSection').classList.remove('hidden');
-            }
+            const isAdmin = user instanceof Admin;
+            this.getElement('adminProductControls').classList.toggle('hidden', !isAdmin);
+            this.getElement('cartSection').classList.toggle('hidden', isAdmin);
             
-            // Load data with delay to ensure DOM is ready
+            // Load data after UI updates
             setTimeout(() => {
                 this.loadProducts();
-                this.loadCart();
+                if (!isAdmin) this.loadCart();
                 this.loadOrders();
             }, 100);
             
@@ -82,11 +98,9 @@ export class UIManager {
     }
 
     register() {
-        const username = document.getElementById('regUsername').value;
-        const password = document.getElementById('regPassword').value;
-        const phoneNumber = document.getElementById('regPhone').value;
-        // REMOVED: const role = document.getElementById('regRole').value;
-        const role = 'CUSTOMER'; // DEFAULT: Always create as customer
+        const username = this.getElement('regUsername').value;
+        const password = this.getElement('regPassword').value;
+        const phoneNumber = this.getElement('regPhone').value;
         
         if (!username || !password || !phoneNumber) {
             this.showAlert('Please fill in all fields');
@@ -94,15 +108,14 @@ export class UIManager {
         }
         
         try {
-            this.app.userManager.registerUser(username, password, phoneNumber, role);
+            this.app.userManager.registerUser(username, password, phoneNumber, 'CUSTOMER');
             this.showAlert('Registration successful! Please login to continue.', 'success');
             this.switchAuthTab('login');
             
-            // Clear registration form
-            document.getElementById('regUsername').value = '';
-            document.getElementById('regPassword').value = '';
-            document.getElementById('regPhone').value = '';
-            // REMOVED: document.getElementById('regRole').value = 'CUSTOMER';
+            // Clear form
+            ['regUsername', 'regPassword', 'regPhone'].forEach(id => {
+                this.getElement(id).value = '';
+            });
         } catch (error) {
             this.showAlert(error.message);
         }
@@ -114,38 +127,30 @@ export class UIManager {
             this.app.currentSession = null;
         }
         
-        document.getElementById('authSection').classList.remove('hidden');
-        document.getElementById('mainApp').classList.add('hidden');
+        this.getElement('authSection').classList.remove('hidden');
+        this.getElement('mainApp').classList.add('hidden');
         
-        // Clear forms
-        document.getElementById('loginUsername').value = '';
-        document.getElementById('loginPassword').value = '';
-        
-        // Reset filter
+        // Clear forms and reset filter
+        ['loginUsername', 'loginPassword'].forEach(id => {
+            this.getElement(id).value = '';
+        });
         this.currentFilter = 'ALL';
         
         this.showAlert('You have been logged out successfully', 'success');
     }
 
-    // New filter function
     filterProducts(type) {
         this.currentFilter = type;
         this.loadProducts();
         
-        // Update active filter button
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`.filter-btn[data-type="${type}"]`).classList.add('active');
     }
 
     loadProducts() {
-        console.log('Loading products...');
-        const productsGrid = document.getElementById('productsGrid');
-        if (!productsGrid) {
-            console.error('Products grid element not found');
-            return;
-        }
+        const productsGrid = this.getElement('productsGrid');
+        if (!productsGrid) return;
         
         try {
             let products = this.app.productManager.getAllProducts();
@@ -155,19 +160,17 @@ export class UIManager {
                 products = products.filter(product => product.type === this.currentFilter);
             }
             
-            console.log('Found products:', products.length);
-            
             const isAdmin = this.app.userManager.isAdmin(this.app.currentSession);
-            
             productsGrid.innerHTML = '';
             
             if (products.length === 0) {
                 const filterText = this.currentFilter === 'ALL' ? 'products' : 
                     (this.currentFilter === ProductType.DRINK ? 'drinks' : 'food items');
+                const icon = this.currentFilter === ProductType.DRINK ? 'coffee' : 'utensils';
+                
                 productsGrid.innerHTML = `
                     <div class="no-products">
-                        <i class="fas fa-${this.currentFilter === ProductType.DRINK ? 'coffee' : 'utensils'}" 
-                        style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
+                        <i class="fas fa-${icon}" style="font-size: 3em; color: #8b4513; margin-bottom: 20px;"></i>
                         <h3>No ${filterText} available</h3>
                         <p>Check back soon for our amazing ${filterText}!</p>
                     </div>
@@ -176,143 +179,129 @@ export class UIManager {
             }
             
             products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                
-                // Get product type icon and info
-                const typeIcon = product.type === ProductType.DRINK ? '☕' : '🍽️';
-                const typeClass = product.type === ProductType.DRINK ? 'drink-card' : 'food-card';
-                
-                let additionalInfo = '';
-                if (product.type === ProductType.DRINK) {
-                    additionalInfo = `
-                        <div class="product-specs">
-                            <span class="spec-badge ${product.isHot ? 'hot' : 'cold'}">
-                                <i class="fas fa-${product.isHot ? 'fire' : 'snowflake'}"></i> 
-                                ${product.isHot ? 'Hot' : 'Cold'}
-                            </span>
-                        </div>
-                    `;
-                } else {
-                    additionalInfo = `
-                        <div class="product-specs">
-                            <span class="spec-badge ${product.isVegetarian ? 'vegetarian' : 'non-vegetarian'}">
-                                <i class="fas fa-${product.isVegetarian ? 'leaf' : 'drumstick-bite'}"></i> 
-                                ${product.isVegetarian ? 'Vegetarian' : 'Non-Vegetarian'}
-                            </span>
-                        </div>
-                    `;
-                }
-
-                // Size selector for drinks (customer view only)
-                const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? `
-                    <div class="product-size-compact">
-                        <div class="current-size-display">
-                            <span class="size-label">Size: <strong id="current_size_${product.id}">M</strong></span>
-                            <span class="size-price" id="current_price_${product.id}">${this.formatPrice(product.price)}</span>
-                        </div>
-                        <button type="button" class="size-change-btn" onclick="window.uiManager.toggleSizeSelector('${product.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <div class="size-options-popup hidden" id="size_popup_${product.id}">
-                            ${Object.entries(SizeMultipliers).map(([size, info]) => `
-                                <button type="button" class="size-option-btn ${size === 'M' ? 'active' : ''}" 
-                                    onclick="window.uiManager.selectSize('${product.id}', '${size}', ${product.price * info.multiplier})">
-                                    ${size} - ${this.formatPrice(product.price * info.multiplier)}
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : '';
-                
-                productCard.innerHTML = `
-                    <div class="product-image">
-                        <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
-                            onerror="this.src='https://via.placeholder.com/300x200/8B4513/FFFFFF?text=${encodeURIComponent(product.name)}'">
-                        <div class="product-type-badge">${typeIcon}</div>
-                    </div>
-                    <div class="product-content">
-                        <div class="product-header">
-                            <h4>${product.name}</h4>
-                        </div>
-                        ${additionalInfo}
-                        <div class="product-price-display" id="price_display_${product.id}">
-                            Price: ${this.formatPrice(product.price)}
-                        </div>
-                        ${sizeSelector}
-                        <div class="product-actions">
-                            ${!isAdmin ? `
-                                <div class="quantity-selector">
-                                    <button class="quantity-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value || 1) - 1)">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                    <input type="number" value="1" min="1" max="10" class="quantity-input" id="qty_${product.id}">
-                                    <button class="quantity-btn" onclick="this.previousElementSibling.value = Math.min(10, parseInt(this.previousElementSibling.value || 1) + 1)">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCartWithSize('${product.id}')">
-                                    <i class="fas fa-cart-plus"></i> Add to Cart
-                                </button>
-                            ` : `
-                                <div class="admin-actions">
-                                    <button class="btn btn-edit" onclick="window.uiManager.editProduct('${product.id}')">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="btn btn-danger btn-delete" onclick="window.uiManager.deleteProduct('${product.id}')">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                `;
-                
-                productCard.classList.add(typeClass);
+                const productCard = this.createProductCard(product, isAdmin);
                 productsGrid.appendChild(productCard);
             });
             
-            console.log('Products loaded successfully');
         } catch (error) {
-            console.error('Error loading products:', error);
             this.showAlert('Error loading products: ' + error.message);
         }
     }
 
-    addToCart(productId, quantity, size = 'M') {
-        if (!quantity || quantity < 1) {
-            this.showAlert('Please select a valid quantity');
-            return;
-        }
+    createProductCard(product, isAdmin) {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
         
-        try {
-            this.app.cartManager.addToCart(productId, quantity, this.app.currentSession, size);
-            this.loadCart();
-            this.showAlert(`Added ${quantity} item(s) to your cart!`, 'success');
-            
-            // Reset quantity input
-            const qtyInput = document.getElementById(`qty_${productId}`);
-            if (qtyInput) qtyInput.value = '1';
-        } catch (error) {
-            this.showAlert(error.message);
+        const typeIcon = product.type === ProductType.DRINK ? '☕' : '🍽️';
+        const typeClass = product.type === ProductType.DRINK ? 'drink-card' : 'food-card';
+        
+        // Product specs
+        let specs = '';
+        if (product.type === ProductType.DRINK) {
+            const tempClass = product.isHot ? 'hot' : 'cold';
+            const tempIcon = product.isHot ? 'fire' : 'snowflake';
+            const tempText = product.isHot ? 'Hot' : 'Cold';
+            specs = `<span class="spec-badge ${tempClass}"><i class="fas fa-${tempIcon}"></i> ${tempText}</span>`;
+        } else {
+            const vegClass = product.isVegetarian ? 'vegetarian' : 'non-vegetarian';
+            const vegIcon = product.isVegetarian ? 'leaf' : 'drumstick-bite';
+            const vegText = product.isVegetarian ? 'Vegetarian' : 'Non-Vegetarian';
+            specs = `<span class="spec-badge ${vegClass}"><i class="fas fa-${vegIcon}"></i> ${vegText}</span>`;
         }
+
+        // Size selector for drinks (customer view only)
+        const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? 
+            this.createSizeSelector(product) : '';
+        
+        // Actions based on user type
+        const actions = isAdmin ? `
+            <div class="admin-actions">
+                <button class="btn btn-edit" onclick="window.uiManager.editProduct('${product.id}')">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-danger btn-delete" onclick="window.uiManager.deleteProduct('${product.id}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        ` : `
+            <div class="quantity-selector">
+                <button class="quantity-btn" onclick="this.nextElementSibling.value = Math.max(1, parseInt(this.nextElementSibling.value || 1) - 1)">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <input type="number" value="1" min="1" max="10" class="quantity-input" id="qty_${product.id}">
+                <button class="quantity-btn" onclick="this.previousElementSibling.value = Math.min(10, parseInt(this.previousElementSibling.value || 1) + 1)">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <button class="btn btn-add-to-cart" onclick="window.uiManager.addToCartWithSize('${product.id}')">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+        `;
+        
+        productCard.innerHTML = `
+            <div class="product-image">
+                <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
+                    onerror="this.src='https://via.placeholder.com/300x200/8B4513/FFFFFF?text=${encodeURIComponent(product.name)}'">
+                <div class="product-type-badge">${typeIcon}</div>
+            </div>
+            <div class="product-content">
+                <div class="product-header">
+                    <h4>${product.name}</h4>
+                </div>
+                <div class="product-specs">${specs}</div>
+                <div class="product-price-display" id="price_display_${product.id}">
+                    Price: ${this.formatPrice(product.price)}
+                </div>
+                ${sizeSelector}
+                <div class="product-actions">${actions}</div>
+            </div>
+        `;
+        
+        productCard.classList.add(typeClass);
+        return productCard;
     }
 
+    createSizeSelector(product) {
+        const sizeOptions = Object.entries(SizeMultipliers).map(([size, info]) => `
+            <button type="button" class="size-option-btn ${size === 'M' ? 'active' : ''}" 
+                onclick="window.uiManager.selectSize('${product.id}', '${size}', ${product.price * info.multiplier})">
+                ${size} - ${this.formatPrice(product.price * info.multiplier)}
+            </button>
+        `).join('');
+
+        return `
+            <div class="product-size-compact">
+                <div class="current-size-display">
+                    <span class="size-label">Size: <strong id="current_size_${product.id}">M</strong></span>
+                    <span class="size-price" id="current_price_${product.id}">${this.formatPrice(product.price)}</span>
+                </div>
+                <button type="button" class="size-change-btn" onclick="window.uiManager.toggleSizeSelector('${product.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <div class="size-options-popup hidden" id="size_popup_${product.id}">
+                    ${sizeOptions}
+                </div>
+            </div>
+        `;
+    }
+
+    // Unified add to cart method
     addToCartWithSize(productId) {
-        const quantity = parseInt(document.getElementById(`qty_${productId}`).value || 1);
+        const qtyInput = this.getElement(`qty_${productId}`);
+        const quantity = parseInt(qtyInput?.value || 1);
         
-        if (!quantity || quantity < 1) {
+        if (quantity < 1) {
             this.showAlert('Please select a valid quantity');
             return;
         }
         
-        // Get selected size for drinks
         const product = this.app.productManager.getProductById(productId);
-        let selectedSize = 'M'; // default
+        if (!product) return;
         
-        if (product && product.type === ProductType.DRINK) {
-            // Lấy size từ data attribute hoặc từ hiển thị hiện tại
-            const currentSizeElement = document.getElementById(`current_size_${productId}`);
+        // Get selected size for drinks
+        let selectedSize = 'M';
+        if (product.type === ProductType.DRINK) {
+            const currentSizeElement = this.getElement(`current_size_${productId}`);
             if (currentSizeElement) {
                 selectedSize = currentSizeElement.textContent.trim();
             }
@@ -325,12 +314,11 @@ export class UIManager {
             const sizeText = product.type === ProductType.DRINK ? ` (Size: ${selectedSize})` : '';
             this.showAlert(`Added ${quantity} item(s)${sizeText} to your cart!`, 'success');
             
-            // Reset quantity input
-            const qtyInput = document.getElementById(`qty_${productId}`);
+            // Reset inputs
             if (qtyInput) qtyInput.value = '1';
-            
-            // Reset size selection to Medium
-            this.selectSize(productId, 'M', product.price);
+            if (product.type === ProductType.DRINK) {
+                this.selectSize(productId, 'M', product.price);
+            }
             
         } catch (error) {
             this.showAlert(error.message);
@@ -338,63 +326,49 @@ export class UIManager {
     }
 
     toggleSizeSelector(productId) {
-        const popup = document.getElementById(`size_popup_${productId}`);
-        if (popup) {
-            // Đóng tất cả popup khác trước
-            document.querySelectorAll('.size-options-popup').forEach(p => {
-                if (p.id !== `size_popup_${productId}`) {
-                    p.classList.add('hidden');
-                }
-            });
-            
-            // Toggle popup hiện tại
-            popup.classList.toggle('hidden');
-            
-            // Đóng popup khi click ra ngoài
-            if (!popup.classList.contains('hidden')) {
-                setTimeout(() => {
-                    const closeHandler = (e) => {
-                        if (!e.target.closest(`#size_popup_${productId}`) && 
-                            !e.target.closest('.size-change-btn')) {
-                            popup.classList.add('hidden');
-                            document.removeEventListener('click', closeHandler);
-                        }
-                    };
-                    document.addEventListener('click', closeHandler);
-                }, 10);
+        const popup = this.getElement(`size_popup_${productId}`);
+        if (!popup) return;
+        
+        // Close other popups
+        document.querySelectorAll('.size-options-popup').forEach(p => {
+            if (p.id !== `size_popup_${productId}`) {
+                p.classList.add('hidden');
             }
+        });
+        
+        // Toggle current popup
+        popup.classList.toggle('hidden');
+        
+        // Setup outside click handler
+        if (!popup.classList.contains('hidden')) {
+            setTimeout(() => {
+                const closeHandler = (e) => {
+                    if (!e.target.closest(`#size_popup_${productId}`) && 
+                        !e.target.closest('.size-change-btn')) {
+                        popup.classList.add('hidden');
+                        document.removeEventListener('click', closeHandler);
+                    }
+                };
+                document.addEventListener('click', closeHandler);
+            }, 10);
         }
     }
 
     selectSize(productId, size, price) {
-        // Cập nhật size hiển thị
-        const currentSizeElement = document.getElementById(`current_size_${productId}`);
+        // Update displays
+        const currentSizeElement = this.getElement(`current_size_${productId}`);
+        const priceDisplayElement = this.getElement(`price_display_${productId}`);
+        const popup = this.getElement(`size_popup_${productId}`);
+        
         if (currentSizeElement) currentSizeElement.textContent = size;
+        if (priceDisplayElement) priceDisplayElement.textContent = `Price: ${this.formatPrice(price)}`;
         
-        // CẬP NHẬT GIÁ CHÍNH CỦA PRODUCT
-        const priceDisplayElement = document.getElementById(`price_display_${productId}`);
-        if (priceDisplayElement) {
-            priceDisplayElement.textContent = `Price: ${this.formatPrice(price)}`;
-        }
-        
-        // Cập nhật active state cho buttons
-        const popup = document.getElementById(`size_popup_${productId}`);
+        // Update button states
         if (popup) {
-            popup.querySelectorAll('.size-option-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            popup.querySelector(`[onclick*="'${size}'"]`).classList.add('active');
-            
-            // Đóng popup
+            popup.querySelectorAll('.size-option-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = popup.querySelector(`[onclick*="'${size}'"]`);
+            if (activeBtn) activeBtn.classList.add('active');
             popup.classList.add('hidden');
-        }
-        
-        // Lưu size đã chọn vào data attribute
-        const productCard = document.querySelector(`[data-product-id="${productId}"]`) || 
-                        popup?.closest('.product-card');
-        if (productCard) {
-            productCard.setAttribute('data-selected-size', size);
-            productCard.setAttribute('data-selected-price', price);
         }
     }
 
@@ -403,11 +377,11 @@ export class UIManager {
         
         try {
             const cartItems = this.app.cartManager.getCart(this.app.currentSession);
-            const cartContainer = document.getElementById('cartItems');
-            const cartTotal = document.getElementById('cartTotal');
-            const checkoutBtn = document.getElementById('checkoutBtn');
+            const cartContainer = this.getElement('cartItems');
+            const cartTotal = this.getElement('cartTotal');
+            const checkoutBtn = this.getElement('checkoutBtn');
             
-            if (!cartContainer || !cartTotal || !checkoutBtn) return;
+            if (!cartContainer) return;
             
             cartContainer.innerHTML = '';
             let total = 0;
@@ -420,8 +394,8 @@ export class UIManager {
                         <p>Add some delicious items from our menu!</p>
                     </div>
                 `;
-                cartTotal.innerHTML = '';
-                checkoutBtn.classList.add('hidden');
+                if (cartTotal) cartTotal.innerHTML = '';
+                if (checkoutBtn) checkoutBtn.classList.add('hidden');
                 return;
             }
             
@@ -431,7 +405,6 @@ export class UIManager {
                 
                 total += item.totalPrice;
                 
-                // Size info for drinks
                 const sizeInfo = product.type === ProductType.DRINK ? 
                     `<span class="item-size">Size: ${item.size} (${SizeMultipliers[item.size]?.label || 'Medium'})</span>` : '';
                 
@@ -459,31 +432,30 @@ export class UIManager {
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                        <div class="item-total">
-                            ${this.formatPrice(item.totalPrice)}
-                        </div>
+                        <div class="item-total">${this.formatPrice(item.totalPrice)}</div>
                     </div>
                 `;
                 cartContainer.appendChild(cartItem);
             });
             
-            cartTotal.innerHTML = `
-                <div class="cart-summary">
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span>${this.formatPrice(total)}</span>
+            if (cartTotal) {
+                cartTotal.innerHTML = `
+                    <div class="cart-summary">
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span>${this.formatPrice(total)}</span>
+                        </div>
+                        <div class="summary-row total-row">
+                            <span><strong>Total:</strong></span>
+                            <span><strong>${this.formatPrice(total)}</strong></span>
+                        </div>
                     </div>
-                    <div class="summary-row total-row">
-                        <span><strong>Total:</strong></span>
-                        <span><strong>${this.formatPrice(total)}</strong></span>
-                    </div>
-                </div>
-            `;
+                `;
+            }
             
-            checkoutBtn.classList.remove('hidden');
+            if (checkoutBtn) checkoutBtn.classList.remove('hidden');
             
         } catch (error) {
-            console.error('Error loading cart:', error);
             this.showAlert('Error loading cart: ' + error.message);
         }
     }
@@ -504,7 +476,7 @@ export class UIManager {
     loadOrders() {
         try {
             const orders = this.app.orderManager.getAllOrders(this.app.currentSession);
-            const ordersContainer = document.getElementById('ordersContainer');
+            const ordersContainer = this.getElement('ordersContainer');
             const isAdmin = this.app.userManager.isAdmin(this.app.currentSession);
             
             if (!ordersContainer) return;
@@ -530,6 +502,19 @@ export class UIManager {
                 const orderTypeText = order.orderType === OrderType.REGULAR_ORDER ? 'Home Delivery' : 'Store Pickup';
                 const addressInfo = `<i class="fas fa-map-marker-alt"></i> ${order.deliveryAddress}`;
                 
+                const statusSelect = isAdmin ? `
+                    <div class="order-actions">
+                        <select class="status-select" onchange="window.uiManager.updateOrderStatus('${order.id}', this.value)">
+                            <option value="">Change Status</option>
+                            <option value="${OrderStatus.CONFIRMED}">Confirmed</option>
+                            <option value="${OrderStatus.PREPARING}">Preparing</option>
+                            <option value="${OrderStatus.READY}">Ready</option>
+                            <option value="${OrderStatus.DELIVERED}">Delivered</option>
+                            <option value="${OrderStatus.CANCELLED}">Cancelled</option>
+                        </select>
+                    </div>
+                ` : '';
+                
                 orderDiv.innerHTML = `
                     <div class="order-info">
                         <div class="order-header">
@@ -552,23 +537,11 @@ export class UIManager {
                             </p>
                         </div>
                     </div>
-                    ${isAdmin ? `
-                        <div class="order-actions">
-                            <select class="status-select" onchange="window.uiManager.updateOrderStatus('${order.id}', this.value)">
-                                <option value="">Change Status</option>
-                                <option value="${OrderStatus.CONFIRMED}">Confirmed</option>
-                                <option value="${OrderStatus.PREPARING}">Preparing</option>
-                                <option value="${OrderStatus.READY}">Ready</option>
-                                <option value="${OrderStatus.DELIVERED}">Delivered</option>
-                                <option value="${OrderStatus.CANCELLED}">Cancelled</option>
-                            </select>
-                        </div>
-                    ` : ''}
+                    ${statusSelect}
                 `;
                 ordersContainer.appendChild(orderDiv);
             });
         } catch (error) {
-            console.error('Error loading orders:', error);
             this.showAlert('Error loading orders: ' + error.message);
         }
     }
@@ -585,66 +558,94 @@ export class UIManager {
         }
     }
 
+    // Product Management Methods
     openProductModal(productId = null) {
         this.currentEditingProduct = productId;
-        const modal = document.getElementById('productModal');
+        const modal = this.getElement('productModal');
         
         if (productId) {
             const product = this.app.productManager.getProductById(productId);
             if (product) {
-                document.getElementById('productName').value = product.name;
-                document.getElementById('productPrice').value = product.price;
-                document.getElementById('productType').value = product.type;
-                document.getElementById('productImageUrl').value = product.imageUrl || product.imageURL || '';
-                
-                if (product.type === ProductType.DRINK) {
-                    document.getElementById('productSize').value = product.size;
-                    document.getElementById('productIsHot').checked = product.isHot;
-                } else {
-                    document.getElementById('productIsVegetarian').checked = product.isVegetarian;
-                }
-                
-                this.toggleProductTypeFields();
+                this.populateProductForm(product);
             }
         } else {
-            // Clear form for new product
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('productType').value = 'DRINK';
-            document.getElementById('productImageUrl').value = '';
-            document.getElementById('productSize').value = 'M';
-            document.getElementById('productIsHot').checked = false;
-            document.getElementById('productIsVegetarian').checked = false;
-            this.toggleProductTypeFields();
+            this.clearProductForm();
         }
         
         modal.style.display = 'block';
     }
 
+    populateProductForm(product) {
+        const fields = ['productName', 'productPrice', 'productType', 'productImageUrl'];
+        const values = [product.name, product.price, product.type, product.imageUrl || product.imageURL || ''];
+        
+        fields.forEach((field, index) => {
+            const element = this.getElement(field);
+            if (element) element.value = values[index];
+        });
+        
+        if (product.type === ProductType.DRINK) {
+            const sizeEl = this.getElement('productSize');
+            const hotEl = this.getElement('productIsHot');
+            if (sizeEl) sizeEl.value = product.size;
+            if (hotEl) hotEl.checked = product.isHot;
+        } else {
+            const vegEl = this.getElement('productIsVegetarian');
+            if (vegEl) vegEl.checked = product.isVegetarian;
+        }
+        
+        this.toggleProductTypeFields();
+    }
+
+    clearProductForm() {
+        const fieldDefaults = {
+            'productName': '',
+            'productPrice': '',
+            'productType': 'DRINK',
+            'productImageUrl': '',
+            'productSize': 'M',
+            'productIsHot': false,
+            'productIsVegetarian': false
+        };
+        
+        Object.entries(fieldDefaults).forEach(([field, defaultValue]) => {
+            const element = this.getElement(field);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = defaultValue;
+                } else {
+                    element.value = defaultValue;
+                }
+            }
+        });
+        
+        this.toggleProductTypeFields();
+    }
+
     closeProductModal() {
-        document.getElementById('productModal').style.display = 'none';
+        this.getElement('productModal').style.display = 'none';
         this.currentEditingProduct = null;
     }
 
     toggleProductTypeFields() {
-        const type = document.getElementById('productType').value;
-        const drinkFields = document.getElementById('drinkFields');
-        const foodFields = document.getElementById('foodFields');
+        const type = this.getElement('productType').value;
+        const drinkFields = this.getElement('drinkFields');
+        const foodFields = this.getElement('foodFields');
         
         if (type === ProductType.DRINK) {
-            drinkFields.classList.remove('hidden');
-            foodFields.classList.add('hidden');
+            drinkFields?.classList.remove('hidden');
+            foodFields?.classList.add('hidden');
         } else {
-            drinkFields.classList.add('hidden');
-            foodFields.classList.remove('hidden');
+            drinkFields?.classList.add('hidden');
+            foodFields?.classList.remove('hidden');
         }
     }
 
     saveProduct() {
-        const name = document.getElementById('productName').value;
-        const price = parseFloat(document.getElementById('productPrice').value);
-        const type = document.getElementById('productType').value;
-        const imageUrl = document.getElementById('productImageUrl').value;
+        const name = this.getElement('productName').value;
+        const price = parseFloat(this.getElement('productPrice').value);
+        const type = this.getElement('productType').value;
+        const imageUrl = this.getElement('productImageUrl').value;
         
         if (!name || !price || price <= 0) {
             this.showAlert('Please fill in all required fields with valid values');
@@ -653,10 +654,10 @@ export class UIManager {
         
         const specificData = {};
         if (type === ProductType.DRINK) {
-            specificData.size = document.getElementById('productSize').value;
-            specificData.isHot = document.getElementById('productIsHot').checked;
+            specificData.size = this.getElement('productSize').value;
+            specificData.isHot = this.getElement('productIsHot').checked;
         } else {
-            specificData.isVegetarian = document.getElementById('productIsVegetarian').checked;
+            specificData.isVegetarian = this.getElement('productIsVegetarian').checked;
         }
         
         try {
@@ -693,115 +694,81 @@ export class UIManager {
         }
     }
 
-    loadCheckoutCartItems() {
-    if (!this.app.currentSession || this.app.userManager.isAdmin(this.app.currentSession)) return;
-    
-    try {
-        const cartItems = this.app.cartManager.getCart(this.app.currentSession);
-        const checkoutCartItems = document.getElementById('checkoutCartItems');
-        
-        if (!checkoutCartItems) return;
-        
-        checkoutCartItems.innerHTML = '';
-        
-        if (cartItems.length === 0) {
-            checkoutCartItems.innerHTML = '<p style="text-align: center; color: #666;">No items in cart</p>';
-            return;
-        }
-        
-        cartItems.forEach(item => {
-            const product = this.app.productManager.getProductById(item.productId);
-            if (!product) return;
-            
-            const checkoutItem = document.createElement('div');
-            checkoutItem.className = 'checkout-item';
-            
-            // Size selector for drinks only
-            const sizeSelector = (!isAdmin && product.type === ProductType.DRINK) ? `
-                <div class="product-size-compact">
-                    <div class="current-size-display">
-                        <span class="size-label">Size: <strong id="current_size_${product.id}">M</strong></span>
-                    </div>
-                    <button type="button" class="size-change-btn" onclick="window.uiManager.toggleSizeSelector('${product.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <div class="size-options-popup hidden" id="size_popup_${product.id}">
-                        ${Object.entries(SizeMultipliers).map(([size, info]) => `
-                            <button type="button" class="size-option-btn ${size === 'M' ? 'active' : ''}" 
-                                onclick="window.uiManager.selectSize('${product.id}', '${size}', ${product.price * info.multiplier})">
-                                ${size} - ${this.formatPrice(product.price * info.multiplier)}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : '';
-            
-            checkoutItem.innerHTML = `
-                <div class="checkout-item-image">
-                    <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
-                         onerror="this.src='https://via.placeholder.com/50x50/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
-                </div>
-                <div class="checkout-item-info">
-                    <h6>${product.name}</h6>
-                    <p class="checkout-item-qty">Quantity: ${item.quantity}</p>
-                </div>
-                <div class="checkout-item-controls">
-                    ${sizeSelector}
-                    <div class="checkout-item-price">
-                        ${this.formatPrice(item.totalPrice)}
-                    </div>
-                </div>
-            `;
-            
-            checkoutCartItems.appendChild(checkoutItem);
-        });
-        
-    } catch (error) {
-        console.error('Error loading checkout cart items:', error);
-    }
-    }
-
-    updateCheckoutItemSize(itemId, newSize) {
-    try {
-        this.app.cartManager.updateCartItemSize(itemId, newSize, this.app.currentSession);
-        this.loadCheckoutCartItems(); // Reload checkout items
-        this.loadCart(); // Reload main cart display
-    } catch (error) {
-        this.showAlert(error.message);
-    }
-    }
-
+    // Checkout Methods
     openCheckoutModal() {
-        document.getElementById('checkoutModal').style.display = 'block';
-        document.getElementById('orderType').value = 'REGULAR_ORDER';
-        document.getElementById('deliveryAddress').value = '';
-        document.getElementById('pickupLocation').value = '';
-        this.loadCheckoutCartItems(); 
+        const modal = this.getElement('checkoutModal');
+        const orderType = this.getElement('orderType');
+        const deliveryAddress = this.getElement('deliveryAddress');
+        
+        if (orderType) orderType.value = 'REGULAR_ORDER';
+        if (deliveryAddress) deliveryAddress.value = '';
+        
+        this.loadCheckoutCartItems();
+        modal.style.display = 'block';
     }
 
     closeCheckoutModal() {
-        document.getElementById('checkoutModal').style.display = 'none';
+        this.getElement('checkoutModal').style.display = 'none';
     }
 
-    updateCheckoutItemSize(itemId, newSize) {
+    loadCheckoutCartItems() {
+        if (!this.app.currentSession || this.app.userManager.isAdmin(this.app.currentSession)) return;
+        
         try {
-            this.app.cartManager.updateCartItemSize(itemId, newSize, this.app.currentSession);
-            this.loadCheckoutCartItems(); // Reload checkout items
-            this.loadCart(); // Reload main cart display
+            const cartItems = this.app.cartManager.getCart(this.app.currentSession);
+            const checkoutCartItems = this.getElement('checkoutCartItems');
+            
+            if (!checkoutCartItems) return;
+            
+            checkoutCartItems.innerHTML = '';
+            
+            if (cartItems.length === 0) {
+                checkoutCartItems.innerHTML = '<p style="text-align: center; color: #666;">No items in cart</p>';
+                return;
+            }
+            
+            cartItems.forEach(item => {
+                const product = this.app.productManager.getProductById(item.productId);
+                if (!product) return;
+                
+                const checkoutItem = document.createElement('div');
+                checkoutItem.className = 'checkout-item';
+                
+                checkoutItem.innerHTML = `
+                    <div class="checkout-item-image">
+                        <img src="${product.imageUrl || product.imageURL}" alt="${product.name}" 
+                             onerror="this.src='https://via.placeholder.com/50x50/8B4513/FFFFFF?text=${encodeURIComponent(product.name.charAt(0))}'">
+                    </div>
+                    <div class="checkout-item-info">
+                        <h6>${product.name}</h6>
+                        <p class="checkout-item-qty">Quantity: ${item.quantity}</p>
+                        ${product.type === ProductType.DRINK ? `<p>Size: ${item.size}</p>` : ''}
+                    </div>
+                    <div class="checkout-item-controls">
+                        <div class="checkout-item-price">
+                            ${this.formatPrice(item.totalPrice)}
+                        </div>
+                    </div>
+                `;
+                
+                checkoutCartItems.appendChild(checkoutItem);
+            });
+            
         } catch (error) {
-            this.showAlert(error.message);
+            console.error('Error loading checkout cart items:', error);
         }
     }
 
     placeOrder() {
-        const orderType = document.getElementById('orderType').value;
-        const orderData = {};
+        const orderType = this.getElement('orderType').value;
+        const deliveryAddress = this.getElement('deliveryAddress').value;
         
-        orderData.deliveryAddress = document.getElementById('deliveryAddress').value;
-        if (!orderData.deliveryAddress.trim()) {
+        if (!deliveryAddress.trim()) {
             this.showAlert('Please enter a delivery address');
             return;
         }
+        
+        const orderData = { deliveryAddress };
         
         try {
             const order = this.app.orderManager.createOrder(orderType, orderData, this.app.currentSession);
@@ -817,6 +784,7 @@ export class UIManager {
         }
     }
 
+    // Utility Methods
     formatPrice(price) {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -826,20 +794,15 @@ export class UIManager {
     }
 
     setupEventListeners() {
-        // Close modals when clicking outside
+        // Close modals when clicking outside or pressing ESC
         window.onclick = (event) => {
-            const productModal = document.getElementById('productModal');
-            const checkoutModal = document.getElementById('checkoutModal');
+            const productModal = this.getElement('productModal');
+            const checkoutModal = this.getElement('checkoutModal');
             
-            if (event.target === productModal) {
-                this.closeProductModal();
-            }
-            if (event.target === checkoutModal) {
-                this.closeCheckoutModal();
-            }
-        }
+            if (event.target === productModal) this.closeProductModal();
+            if (event.target === checkoutModal) this.closeCheckoutModal();
+        };
         
-        // Handle ESC key to close modals
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 this.closeProductModal();
